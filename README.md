@@ -51,7 +51,7 @@ Anúncio (Google Ads, UTM) → WhatsApp (Baileys/Evolution API) → n8n
   (workflow já existe em `../Rastro/n8n/workflow_agente_chatwoot.json`).
 - **Orquestração:** **n8n** (Webhook → Config Cliente → AI Agent → Structured Output Parser → envio).
 - **LLM:** nó `OpenAI Chat Model` apontando para o LLM local
-  `http://127.0.0.1:8888/v1` — modelo `unsloth/gemma-4-12B-it-qat-GGUF` (chave em `.env.graphify`).
+  `http://127.0.0.1:8888/v1` — modelo `Qwen/Qwen2.5-14B-Instruct-GGUF` (chave em `.env.graphify`).
 - **Dashboard:** **Rastro** (FastAPI + Postgres + Next.js) — recebe cada lead via webhook.
 
 ---
@@ -130,7 +130,7 @@ Fonte: `../relatórios g-ads/regulamento-renda-ton.pdf` e `../relatórios g-ads/
 ## LLM + Graphify (economia de tokens)
 
 **LLM do agente:** OpenAI-compatível local em `http://127.0.0.1:8888/v1`, modelo
-`unsloth/gemma-4-12B-it-qat-GGUF`, chave `sk-unsloth-…` — config em `.env.graphify` e
+`Qwen/Qwen2.5-14B-Instruct-GGUF`, chave `sk-unsloth-…` — config em `.env.graphify` e
 editável na **interface admin** (`admin/config/agent-config.json` → campo `llm`). Use o mesmo
 endpoint no nó `OpenAI Chat Model` do n8n.
 
@@ -146,8 +146,8 @@ endpoint no nó `OpenAI Chat Model` do n8n.
 Artefatos em `graphify-out/` (graph.json, GRAPH_REPORT.md, graph.html). O LLM do graphify é o
 mesmo local (`OPENAI_API_KEY`/`OPENAI_BASE_URL`/`OPENAI_MODEL` em `.env.graphify`).
 
-> O modelo `gemma-4-12B-it-qat` é um *instruct* (responde direto, sem `reasoning_content`) —
-> funciona bem tanto para o agente quanto para nomear comunidades do graphify.
+> O modelo **Qwen 2.5 14B Instruct** é um *instruct* puro (responde direto, sem vazar
+> `reasoning_content`) — funciona bem para o agente e para o graphify.
 
 ---
 

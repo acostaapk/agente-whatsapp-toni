@@ -48,6 +48,6 @@
   "llm": {
     "base_url": "http://127.0.0.1:8888/v1",
     "api_key": "sk-seu-token-aqui",
-    "model": "unsloth/gemma-4-12B-it-qat-GGUF"
+    "model": "Qwen/Qwen2.5-14B-Instruct-GGUF"
   }
 }

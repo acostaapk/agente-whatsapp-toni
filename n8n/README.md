@@ -11,7 +11,7 @@ Meta Webhook (POST /webhook/whatsapp)
   → Extrair Mensagem (nº do cliente + texto)
   → Carregar Config (GET admin /api/config)
   → Montar Prompt (system message + base de conhecimento + mensagem)
-  → Chamar LLM (OpenAI-compatível local, gemma-4-12B)
+  → Chamar LLM (OpenAI-compatível local, Qwen2.5-14B)
   → Extrair Resposta (content do LLM)
   → Enviar WhatsApp (Graph API /messages)
 ```

@@ -112,7 +112,7 @@ async def whatsapp_message(request: Request):
     meta = cfg.get("meta") or {}
 
     base = llm.get("base_url") or "http://127.0.0.1:8888/v1"
-    model = llm.get("model") or "unsloth/gemma-4-12B-it-qat-GGUF"
+    model = llm.get("model") or "Qwen/Qwen2.5-14B-Instruct-GGUF"
     llm_key = llm.get("api_key") or ""
 
     try:
