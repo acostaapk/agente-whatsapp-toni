@@ -52,8 +52,10 @@ services:
       N8N_SECURE_COOKIE: "false"
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_METRICS: "false"
-      N8N_HOST: localhost
-      N8N_PROTOCOL: http
+      N8N_HOST: wa.analisereview.com.br
+      N8N_PROTOCOL: https
+      N8N_USER_MANAGEMENT_DISABLED: "true"
+      N8N_API_KEY: ${N8N_API_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
 
@@ -61,8 +63,7 @@ services:
     build: ../admin
     container_name: agente-admin
     restart: unless-stopped
-    ports:
-      - "8090:8090"
+    network_mode: host
     volumes:
       - ../admin/config:/app/config
 
