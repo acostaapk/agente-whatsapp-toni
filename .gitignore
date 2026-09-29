@@ -1,0 +1,18 @@
+# Python / venvs
+.venv/
+.venv-graphify/
+__pycache__/
+*.pyc
+
+# Segredos (não commitar — use os *.example)
+.env.graphify
+infra/.env
+admin/config/agent-config.json
+
+# Gerados / transitórios
+graphify-out/
+infra/qr-*.png
+*.log
+
+# OS / editor
+.DS_Store

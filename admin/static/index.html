@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Agente WhatsApp Toní</title>
+  <style>
+    :root {
+      --ink: #1b221f; --muted: #4c5650; --paper: #ffffff; --surface: #eef3f0;
+      --rule: #dfe6e2; --ton: #88ff00; --ton-dark: #203d00; --ton-night: #002e1f;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--surface); }
+    .wrap { max-width: 880px; margin-inline: auto; padding: 2rem 1.25rem 5rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+    .sub { color: var(--muted); margin: 0 0 1.5rem; }
+    .card { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 1.25rem 1.4rem; margin-bottom: 1.1rem; }
+    .card h2 { font-size: 1.05rem; margin: 0 0 .9rem; color: var(--ton-dark); }
+    label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin: .7rem 0 .25rem; }
+    input[type=text], input[type=url], input[type=password], textarea {
+      width: 100%; padding: .6rem .7rem; border: 1px solid var(--rule); border-radius: 8px;
+      font: inherit; color: var(--ink); background: #fff; resize: vertical;
+    }
+    textarea { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: .82rem; line-height: 1.45; }
+    textarea.big { min-height: 260px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .9rem; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+    .radio-row { display: flex; gap: 1.5rem; margin: .4rem 0 .5rem; }
+    .radio-row label { display: flex; align-items: center; gap: .4rem; font-size: .95rem; font-weight: 600; color: var(--ink); cursor: pointer; margin: 0; }
+    .radio-row input { accent-color: var(--ton-dark); }
+    .badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--ton-night); color: var(--ton); margin-left: .4rem; }
+    .actions { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--surface) 30%); padding: 1rem 0 .2rem; display: flex; gap: .8rem; align-items: center; }
+    button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: .8rem 1.6rem; cursor: pointer; }
+    .save { background: var(--ton-night); color: var(--ton); }
+    .save:hover { filter: brightness(1.15); }
+    #status { font-size: .85rem; color: var(--muted); }
+    #status.ok { color: #1a7f37; }
+    #status.err { color: #b3261e; }
+    .hidden { display: none !important; }
+    details { margin-top: .4rem; }
+    summary { cursor: pointer; font-weight: 600; font-size: .85rem; color: var(--ton-dark); }
+    .hint { font-size: .76rem; color: var(--muted); margin-top: .2rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Agente WhatsApp — <span id="titulo-nome">Toní</span> <span class="badge">admin</span></h1>
+    <p class="sub">Selecione o canal (Baileys/Meta) e edite o prompt e os textos do agente. Salve para aplicar.</p>
+
+    <form id="form">
+      <div class="card">
+        <h2>Canal de WhatsApp</h2>
+        <div class="radio-row">
+          <label><input type="radio" name="canal" value="baileys" /> Baileys (Evolution API)</label>
+          <label><input type="radio" name="canal" value="meta" /> Meta Cloud API</label>
+        </div>
+        <p class="hint">Baileys: gratuito, piloto. Meta: oficial, para produção. Passo a passo da Meta em <code>meta-cloud-api.md</code>.</p>
+      </div>
+
+      <div class="card">
+        <h2>Identidade</h2>
+        <div class="grid2">
+          <div><label>Nome do agente</label><input type="text" name="agente_nome" /></div>
+          <div><label>Empresa</label><input type="text" name="empresa_nome" /></div>
+          <div><label>Serviço principal</label><input type="text" name="servico_principal" /></div>
+          <div><label>Tempo de reengajamento</label><input type="text" name="tempo_reengajamento" /></div>
+        </div>
+        <label>Critério de alto valor (escalonamento)</label><input type="text" name="criterio_alto_valor" />
+        <label>Link do app (pós-venda)</label><input type="url" name="link_app" />
+      </div>
+
+      <div class="card">
+        <h2>Prompt do agente (system message)</h2>
+        <label>Usa os placeholders {{agente_nome}}, {{empresa_nome}}, {{servico_principal}}, {{base_conhecimento}}, {{criterio_alto_valor}}, {{link_app}}.</label>
+        <textarea class="big" name="system_message"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>Base de conhecimento</h2>
+        <label>Condições, modelos, taxas e regras que o agente pode citar (nunca invente além disso).</label>
+        <textarea class="big" name="base_conhecimento"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>Modelos (foto + link direto)</h2>
+        <label>Array JSON: id, nome, foto, link. Ex.: <code>[{"id":"t1","nome":"T1","foto":"https://...","link":"https://..."}]</code></label>
+        <textarea name="modelos" style="min-height:160px"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>LLM do agente</h2>
+        <div class="grid2">
+          <div><label>Modelo</label><input type="text" name="llm.model" /></div>
+          <div><label>Base URL (OpenAI-compatível)</label><input type="url" name="llm.base_url" /></div>
+        </div>
+        <label>API Key</label><input type="password" name="llm.api_key" />
+        <p class="hint">Usado pelo nó AI Agent (n8n) e pelo graphify. Mesmo endpoint local.</p>
+      </div>
+
+      <div class="card" id="card-baileys">
+        <h2>Conexão — Baileys (Evolution API)</h2>
+        <div class="grid2">
+          <div><label>API URL</label><input type="url" name="evolution.api_url" /></div>
+          <div><label>Instância</label><input type="text" name="evolution.instance" /></div>
+        </div>
+        <label>API Key (chave do Evolution)</label><input type="password" name="evolution.api_key" />
+      </div>
+
+      <div class="card hidden" id="card-meta">
+        <h2>Conexão — Meta Cloud API</h2>
+        <div class="grid2">
+          <div><label>Phone Number ID</label><input type="text" name="meta.phone_number_id" /></div>
+          <div><label>Versão</label><input type="text" name="meta.version" /></div>
+          <div><label>Verify Token (webhook)</label><input type="text" name="meta.verify_token" /></div>
+        </div>
+        <label>Access Token (permanente)</label><input type="password" name="meta.access_token" />
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="save">Salvar configuração</button>
+        <span id="status"></span>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const status = document.getElementById('status');
+    const cardBaileys = document.getElementById('card-baileys');
+    const cardMeta = document.getElementById('card-meta');
+    const nomeSpan = document.getElementById('titulo-nome');
+
+    function setStatus(msg, ok) {
+      status.textContent = msg;
+      status.className = ok ? 'ok' : 'err';
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    }
+
+    function populate(cfg) {
+      nomeSpan.textContent = cfg.agente_nome || 'Toní';
+      const radio = form.querySelector(`input[name=canal][value="${cfg.canal || 'baileys'}"]`);
+      if (radio) radio.checked = true;
+      const simple = ['agente_nome','empresa_nome','servico_principal','tempo_reengajamento','criterio_alto_valor','link_app','system_message','base_conhecimento'];
+      simple.forEach(k => {
+        const el = form.querySelector(`[name="${k}"]`);
+        if (el) el.value = cfg[k] ?? '';
+      });
+      const modelosEl = form.querySelector('[name="modelos"]');
+      modelosEl.value = JSON.stringify(cfg.modelos ?? [], null, 2);
+      ['api_url','instance','api_key'].forEach(k => {
+        const el = form.querySelector(`[name="evolution.${k}"]`);
+        if (el) el.value = cfg.evolution?.[k] ?? '';
+      });
+      ['phone_number_id','version','verify_token','access_token'].forEach(k => {
+        const el = form.querySelector(`[name="meta.${k}"]`);
+        if (el) el.value = cfg.meta?.[k] ?? '';
+      });
+      ['model','base_url','api_key'].forEach(k => {
+        const el = form.querySelector(`[name="llm.${k}"]`);
+        if (el) el.value = cfg.llm?.[k] ?? '';
+      });
+      syncCanal();
+    }
+
+    function syncCanal() {
+      const canal = form.querySelector('input[name=canal]:checked')?.value;
+      cardBaileys.classList.toggle('hidden', canal !== 'baileys');
+      cardMeta.classList.toggle('hidden', canal !== 'meta');
+    }
+
+    form.querySelectorAll('input[name=canal]').forEach(r => r.addEventListener('change', syncCanal));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const cfg = {
+        canal: data.get('canal'),
+        agente_nome: data.get('agente_nome'),
+        empresa_nome: data.get('empresa_nome'),
+        servico_principal: data.get('servico_principal'),
+        tempo_reengajamento: data.get('tempo_reengajamento'),
+        criterio_alto_valor: data.get('criterio_alto_valor'),
+        link_app: data.get('link_app'),
+        system_message: data.get('system_message'),
+        base_conhecimento: data.get('base_conhecimento'),
+        evolution: {
+          api_url: data.get('evolution.api_url'),
+          api_key: data.get('evolution.api_key'),
+          instance: data.get('evolution.instance'),
+        },
+        meta: {
+          phone_number_id: data.get('meta.phone_number_id'),
+          access_token: data.get('meta.access_token'),
+          verify_token: data.get('meta.verify_token'),
+          version: data.get('meta.version'),
+        },
+        llm: {
+          model: data.get('llm.model'),
+          base_url: data.get('llm.base_url'),
+          api_key: data.get('llm.api_key'),
+        },
+      };
+      try {
+        cfg.modelos = JSON.parse(data.get('modelos') || '[]');
+      } catch (err) {
+        setStatus('Erro: "Modelos" não é JSON válido.', false);
+        return;
+      }
+      try {
+        const res = await fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cfg),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+        setStatus('Salvo ✓', true);
+        populate(cfg);
+      } catch (err) {
+        setStatus('Erro ao salvar: ' + err.message, false);
+      }
+    });
+
+    (async () => {
+      try {
+        const res = await fetch('/api/config');
+        if (!res.ok) throw new Error(res.statusText);
+        populate(await res.json());
+      } catch (err) {
+        setStatus('Erro ao carregar config: ' + err.message, false);
+      }
+    })();
+  </script>
+</body>
+</html>

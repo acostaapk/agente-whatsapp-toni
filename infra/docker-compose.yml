@@ -1,0 +1,71 @@
+services:
+  evolution-db:
+    image: postgres:16
+    container_name: evolution-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolution
+      POSTGRES_DB: evolution_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - evolution_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  evolution:
+    image: evoapicloud/evolution-api:latest
+    container_name: evolution-api
+    restart: unless-stopped
+    depends_on:
+      evolution-db:
+        condition: service_healthy
+    environment:
+      SERVER_URL: http://localhost:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:evolution@evolution-db:5432/evolution_db?schema=evolution_api
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_exchange
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      LANGUAGE: pt-BR
+      TELEMETRY_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      LOG_LEVEL: ERROR,WARN,INFO,LOG
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      TZ: America/Sao_Paulo
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_METRICS: "false"
+      N8N_HOST: localhost
+      N8N_PROTOCOL: http
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  admin:
+    build: ../admin
+    container_name: agente-admin
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - ../admin/config:/app/config
+
+volumes:
+  evolution_pgdata:
+  n8n_data:
