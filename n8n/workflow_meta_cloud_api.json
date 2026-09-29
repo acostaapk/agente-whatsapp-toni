@@ -1,0 +1,134 @@
+{
+  "name": "Agente WhatsApp — Meta Cloud API (Toní)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Meta Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-340, 0],
+      "webhookId": "11111111-1111-4111-8111-111111111111"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Extrai número do cliente e texto da mensagem recebida.\n// Ignora eventos de status (sem value.messages).\nconst entry = ((($json.body && $json.body.entry) || $json.entry || [])[0]) || {};\nconst change = ((entry.changes || [])[0]) || {};\nconst value = change.value || {};\nif (!value.messages || !value.messages.length) return [];\nconst msg = value.messages[0];\nconst from = msg.from || '';\nconst texto = (msg.type === 'text' && msg.text) ? msg.text.body : '';\nif (!from || !texto) return [];\nreturn [{ from, texto }];"
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Extrair Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-120, 0]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:8090/api/config",
+        "authentication": "none",
+        "sendBody": false,
+        "options": {}
+      },
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "Carregar Config",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [100, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Combina a config (do admin) com a mensagem e monta os payloads.\nconst cfg = $json;\nconst msg = $('Extrair Mensagem').item.json;\nconst r = (s) => (s || '')\n  .replaceAll('{{agente_nome}}', cfg.agente_nome || '')\n  .replaceAll('{{empresa_nome}}', cfg.empresa_nome || '')\n  .replaceAll('{{servico_principal}}', cfg.servico_principal || '')\n  .replaceAll('{{criterio_alto_valor}}', cfg.criterio_alto_valor || '')\n  .replaceAll('{{link_app}}', cfg.link_app || '')\n  .replaceAll('{{base_conhecimento}}', cfg.base_conhecimento || '');\nconst system = r(cfg.system_message).replaceAll('{{modelos}}', JSON.stringify(cfg.modelos || []));\nconst base = (cfg.llm && cfg.llm.base_url) || 'http://127.0.0.1:8888/v1';\nconst model = (cfg.llm && cfg.llm.model) || 'unsloth/gemma-4-12B-it-qat-GGUF';\nconst phone = (cfg.meta && cfg.meta.phone_number_id) || '';\nconst version = (cfg.meta && cfg.meta.version) || 'v20.0';\nreturn [{\n  from: msg.from,\n  llm_url: base + '/chat/completions',\n  llm_body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: msg.texto }], max_tokens: 400 }),\n  llm_key: (cfg.llm && cfg.llm.api_key) || '',\n  wa_url: 'https://graph.facebook.com/' + version + '/' + phone + '/messages',\n  wa_token: (cfg.meta && cfg.meta.access_token) || ''\n}];"
+      },
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Montar Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.llm_url }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $json.llm_key }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "stringBody": "={{ $json.llm_body }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "Chamar LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [540, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Extrai a resposta do LLM e monta o payload do WhatsApp.\nconst content = (((($json.choices || [])[0] || {}).message || {}).content || '').trim();\nif (!content) return [];\nconst p = $('Montar Prompt').item.json;\nreturn [{\n  resposta: content,\n  wa_url: p.wa_url,\n  wa_token: p.wa_token,\n  wa_body: JSON.stringify({ messaging_product: 'whatsapp', to: p.from, type: 'text', text: { body: content } })\n}];"
+      },
+      "id": "66666666-6666-4666-8666-666666666666",
+      "name": "Extrair Resposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.wa_url }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $json.wa_token }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "stringBody": "={{ $json.wa_body }}",
+        "options": {}
+      },
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, 0]
+    }
+  ],
+  "connections": {
+    "Meta Webhook": {
+      "main": [[{ "node": "Extrair Mensagem", "type": "main", "index": 0 }]]
+    },
+    "Extrair Mensagem": {
+      "main": [[{ "node": "Carregar Config", "type": "main", "index": 0 }]]
+    },
+    "Carregar Config": {
+      "main": [[{ "node": "Montar Prompt", "type": "main", "index": 0 }]]
+    },
+    "Montar Prompt": {
+      "main": [[{ "node": "Chamar LLM", "type": "main", "index": 0 }]]
+    },
+    "Chamar LLM": {
+      "main": [[{ "node": "Extrair Resposta", "type": "main", "index": 0 }]]
+    },
+    "Extrair Resposta": {
+      "main": [[{ "node": "Enviar WhatsApp", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}
