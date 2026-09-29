@@ -50,8 +50,8 @@ O "cérebro" do agente (system message, roteiro, compliance) **não muda** — s
 1. No app → *WhatsApp → Configuração* (Configuration):
    https://developers.facebook.com/apps/<APP_ID>/whatsapp/wa-settings
 2. Em **Webhook** → **Editar**:
-   - **URL de callback:** `https://SEU-HOST/webhook/evolution` (ou o caminho do seu Webhook
-     node no n8n; em produção precisa HTTPS público — use um túnel como Cloudflare Tunnel/ngrok).
+   - **URL de callback:** `https://wa.analisereview.com.br/webhook/whatsapp` (túnel Cloudflare
+      já configurado, apontando pro n8n em `localhost:5678`).
    - **Verificar token:** um valor que você escolhe (ex.: `toni-verify-2026`).
 3. **Verificar e salvar** (a Meta faz um `GET` com `hub.challenge` que o n8n responde).
 4. Em **Campos de webhook** → assinar **`messages`**.

@@ -35,14 +35,14 @@ ecoar esse valor. O nó genérico `Meta Webhook` (POST) não responde a GET. **D
 
 > Numa implementação final, use a opção 1.
 
-## Túnel (HTTPS público)
+## Túnel (HTTPS público) — já configurado
 
-O webhook da Meta exige URL pública com HTTPS. Para teste local:
-```bash
-# Cloudflare Tunnel (recomendado) ou ngrok apontando pro n8n (porta 5678)
-ngrok http 5678
-```
-Callback URL na Meta: `https://<túnel>/webhook/whatsapp` · Verify token: `toni-verify-2026`.
+Túnel Cloudflare nomeado apontando pro n8n (`localhost:5678`), estável:
+
+- **Callback URL:** `https://wa.analisereview.com.br/webhook/whatsapp`
+- **Verify token:** `toni-verify-2026`
+
+Subir/reiniciar o túnel: `cd infra && ./run-tunnel.sh` (config em `infra/tunnel.json`, gitignored).
 
 ## Número de teste (recipiente)
 
