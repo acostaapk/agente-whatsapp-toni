@@ -58,7 +58,7 @@ O "cérebro" do agente (system message, roteiro, compliance) **não muda** — s
 
 ### 2.7. Testar
 Use o **Graph API Explorer** para mandar a 1ª mensagem de teste:
-- `POST https://graph.facebook.com/v20.0/<PHONE_NUMBER_ID>/messages`
+- `POST https://graph.facebook.com/v25.0/<PHONE_NUMBER_ID>/messages`
   ```json
   {
     "messaging_product": "whatsapp",
@@ -75,11 +75,11 @@ Use o **Graph API Explorer** para mandar a 1ª mensagem de teste:
 
 | Operação | Endpoint |
 |---|---|
-| Enviar texto | `POST /v20.0/{phone-number-id}/messages` (`type: "text"`) |
-| Enviar foto | `POST /v20.0/{phone-number-id}/messages` (`type: "image"`, `image: { link }`) |
-| Enviar template | `POST /v20.0/{phone-number-id}/messages` (`type: "template"`) |
-| Enviar mídia (upload) | `POST /v20.0/{phone-number-id}/media` |
-| Perfil do negócio | `GET/POST /v20.0/{phone-number-id}/whatsapp_business_profile` |
+| Enviar texto | `POST /v25.0/{phone-number-id}/messages` (`type: "text"`) |
+| Enviar foto | `POST /v25.0/{phone-number-id}/messages` (`type: "image"`, `image: { link }`) |
+| Enviar template | `POST /v25.0/{phone-number-id}/messages` (`type: "template"`) |
+| Enviar mídia (upload) | `POST /v25.0/{phone-number-id}/media` |
+| Perfil do negócio | `GET/POST /v25.0/{phone-number-id}/whatsapp_business_profile` |
 | Status da mensagem | webhook `messages` (sent/delivered/read/failed) |
 
 ---
