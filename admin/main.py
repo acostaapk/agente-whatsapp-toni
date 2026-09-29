@@ -83,7 +83,9 @@ def whatsapp_verify(request: Request):
     challenge = q.get("hub.challenge") or ""
     if mode == "subscribe" and token == VERIFY_TOKEN and challenge:
         return Response(content=challenge, media_type="text/plain", status_code=200)
-    return Response(content="forbidden", status_code=403)
+    # GETs de verificação/health-check da Meta sem os params certos: responde 200 (não 403),
+    # para a Meta não marcar o webhook como quebrado.
+    return Response(content="ok", media_type="text/plain", status_code=200)
 
 
 @app.post("/webhook/whatsapp")
