@@ -167,13 +167,16 @@ CADASTRO_QUESTION_PAT = r"cpf.{0,30}mei.{0,30}cnpj|cnpj.{0,30}mei|mei ou cnpj|cp
 
 def _strip_cadastro_question(texto: str) -> str:
     """NUNCA perguntar CPF/MEI/CNPJ: remove essas perguntas sempre, mesmo sem dado conhecido."""
-    parts = re.split(r"(?<=[?!\n])", texto)
-    kept = [p for p in parts
+    kept = [p for p in _split_sentences(texto)
             if not (re.search(r"\?", p) and re.search(CADASTRO_QUESTION_PAT, p, re.IGNORECASE))]
-    out = "".join(kept).strip()
+    out = " ".join(kept).strip()
     if not out:
         out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
     return re.sub(r"\n{3,}", "\n\n", out).strip()
+
+
+def _split_sentences(texto: str) -> list:
+    return [p for p in re.split(r"(?<=[.?!])\s+|\n+", texto) if p.strip()]
 
 
 def _strip_repeated_questions(texto: str, slots: dict) -> str:
@@ -185,10 +188,9 @@ def _strip_repeated_questions(texto: str, slots: dict) -> str:
         pats += SLOT_QUESTION_PATTERNS.get(k, [])
     if not pats:
         return texto
-    parts = re.split(r"(?<=[?!\n])", texto)
-    kept = [p for p in parts
+    kept = [p for p in _split_sentences(texto)
             if not (re.search(r"\?", p) and any(re.search(pat, p, re.IGNORECASE) for pat in pats))]
-    out = "".join(kept).strip()
+    out = " ".join(kept).strip()
     if not out:
         out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
     return re.sub(r"\n{3,}", "\n\n", out).strip()
