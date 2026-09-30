@@ -507,15 +507,14 @@ async def whatsapp_message(request: Request):
         llm_resp = _http_json(
             base + "/chat/completions",
             {"Authorization": "Bearer " + llm_key},
-            {"model": model, "messages": messages, "max_tokens": 512},
+            {"model": model, "messages": messages, "max_tokens": 2048},
         )
     except Exception as e:
         return JSONResponse({"ok": False, "erro": "llm: " + str(e)}, status_code=502)
 
     choice = (llm_resp.get("choices") or [{}])[0] or {}
     resposta = (choice.get("message") or {}).get("content", "").strip()
-    if not resposta:
-        resposta = (choice.get("message") or {}).get("reasoning_content", "").strip()
+    # NUNCA enviar reasoning interno ao cliente: se o conteúdo veio vazio, sem resposta
     if not resposta:
         return {"ok": True, "status": "llm_empty"}
 
