@@ -170,7 +170,7 @@ def _strip_cadastro_question(texto: str, slots: dict) -> str:
     """NUNCA perguntar CPF/MEI/CNPJ: remove essas perguntas sempre, mesmo sem dado conhecido."""
     kept = [p for p in _split_sentences(texto)
             if not (re.search(r"\?", p) and re.search(CADASTRO_QUESTION_PAT, p, re.IGNORECASE))]
-    out = " ".join(kept).strip()
+    out = "\n\n".join(kept).strip()
     if not out:
         out = _fallback_question(slots)
     return re.sub(r"\n{3,}", "\n\n", out).strip()
@@ -184,6 +184,17 @@ def _apply_app_link(texto: str, cfg: dict) -> str:
     if re.search(r"link do app|baixar o app|baixe o app|app ton|aplicativo ton", texto, re.IGNORECASE):
         texto = texto.rstrip() + "\n\n" + app_link
     return texto.strip()
+
+
+def _split_bubbles(texto: str) -> list:
+    """Divide a resposta em bolhas (1 parágrafo = 1 mensagem)."""
+    parts = [p.strip() for p in re.split(r"\n{2,}", texto) if p.strip()]
+    return parts or [texto]
+
+
+def _soften_superlative(texto: str) -> str:
+    texto = re.sub(r"\s+[ée] a melhor op[cç][aã]o para você", " combina com o seu uso", texto, flags=re.IGNORECASE)
+    return texto
 
 
 def _split_sentences(texto: str) -> list:
@@ -201,7 +212,7 @@ def _strip_reintro(texto: str, is_fresh: bool) -> str:
     kept = [p for p in _split_sentences(texto)
             if not re.search(INTRO_PAT, p, re.IGNORECASE)
             and not re.match(GREETING_PAT, p.strip(), re.IGNORECASE)]
-    return " ".join(kept).strip()
+    return "\n\n".join(kept).strip()
 
 
 def _fallback_question(slots: dict) -> str:
@@ -226,7 +237,7 @@ def _keep_first_question(texto: str) -> str:
                 continue
             seen_q = True
         out.append(p)
-    return " ".join(out).strip()
+    return "\n\n".join(out).strip()
 
 
 def _strip_repeated_questions(texto: str, slots: dict) -> str:
@@ -240,7 +251,7 @@ def _strip_repeated_questions(texto: str, slots: dict) -> str:
         return texto
     kept = [p for p in _split_sentences(texto)
             if not (re.search(r"\?", p) and any(re.search(pat, p, re.IGNORECASE) for pat in pats))]
-    out = " ".join(kept).strip()
+    out = "\n\n".join(kept).strip()
     if not out:
         out = _fallback_question(slots)
     return re.sub(r"\n{3,}", "\n\n", out).strip()
@@ -509,6 +520,7 @@ async def whatsapp_message(request: Request):
         return {"ok": True, "status": "llm_empty"}
 
     resposta = _strip_markdown(resposta)
+    resposta = _soften_superlative(resposta)
     is_fresh = len([m for m in hist if m["role"] == "user"]) <= 1
     resposta = _strip_reintro(resposta, is_fresh)
     resposta = _strip_repeated_questions(resposta, slots)
@@ -534,7 +546,8 @@ async def whatsapp_message(request: Request):
 
         if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
             _send_media(cfg, from_, modelo["foto"].strip())
-        _send_reply(cfg, from_, texto)
+        for bubble in _split_bubbles(texto):
+            _send_reply(cfg, from_, bubble)
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
         return {"ok": True, "status": "sent", "modelo": (modelo or {}).get("id"), "resposta": texto}
