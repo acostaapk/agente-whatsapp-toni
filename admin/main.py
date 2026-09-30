@@ -85,11 +85,20 @@ def _norm(s: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
-FORGET_PREFIXES = ("esquec", "limpar conversa", "recomecar", "resetar conversa", "apagar conversa")
+FORGET_PREFIXES = ("esquec", "limpar conversa", "limpar o historico", "recomecar", "resetar conversa", "apagar conversa", "apagar o historico")
 
 
 def _is_forget(texto: str) -> bool:
-    return _norm(texto).startswith(FORGET_PREFIXES)
+    n = _norm(texto)
+    if n.startswith(FORGET_PREFIXES):
+        return True
+    m = re.search(r"\b(esque\w*|recome\w*|reset\w*|limpar conversa|apagar conversa)\b", n)
+    if not m:
+        return False
+    before = n[:m.start()]
+    if re.search(r"\b(nao|nem|nunca|jamais)\b", before[-25:]):
+        return False
+    return True
 
 
 _history_load()
