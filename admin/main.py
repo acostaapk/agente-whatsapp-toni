@@ -107,6 +107,7 @@ _history_load()
 def _strip_markdown(texto: str) -> str:
     texto = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", texto)  # remove imagens markdown (![]())
     texto = re.sub(r"\[([^\]]*)\]\((https?://[^)]+)\)", r"\1 \2", texto)  # [texto](url) -> texto url
+    texto = re.sub(r"\([^)]*automaticamente[^)]*\)", "", texto)  # remove vazamento de mecanismo
     texto = re.sub(r"\*\*(.+?)\*\*", r"\1", texto)  # **negrito** -> texto (WhatsApp usa *simples*)
     texto = re.sub(r"__(.+?)__", r"\1", texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto)
@@ -173,6 +174,16 @@ def _strip_cadastro_question(texto: str) -> str:
     if not out:
         out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
     return re.sub(r"\n{3,}", "\n\n", out).strip()
+
+
+def _apply_app_link(texto: str, cfg: dict) -> str:
+    """Se a resposta fala do link do app mas não traz URL, anexa o link_app."""
+    app_link = (cfg.get("link_app") or "").strip()
+    if not app_link or app_link in texto:
+        return texto
+    if re.search(r"link do app|baixar o app|baixe o app|app ton|aplicativo ton", texto, re.IGNORECASE):
+        texto = texto.rstrip() + "\n\n" + app_link
+    return texto.strip()
 
 
 def _split_sentences(texto: str) -> list:
@@ -475,6 +486,7 @@ async def whatsapp_message(request: Request):
 
         if modelo:
             texto = _apply_model_link(texto, modelo)
+        texto = _apply_app_link(texto, cfg)
 
         if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
             _send_media(cfg, from_, modelo["foto"].strip())
