@@ -217,15 +217,6 @@ def _fallback_question(slots: dict) -> str:
     return "Quer que eu te mostre como fica a taxa no seu volume?"
 
 
-def _strip_reintro(texto: str, is_fresh: bool) -> str:
-    """Remove auto-apresentação quando a conversa já começou."""
-    if is_fresh:
-        return texto
-    kept = [p for p in _split_sentences(texto)
-            if not re.search(INTRO_PAT, p, re.IGNORECASE)]
-    return " ".join(kept).strip()
-
-
 def _keep_first_question(texto: str) -> str:
     """Garante no máximo 1 frase de pergunta por mensagem."""
     out, seen_q = [], False
