@@ -85,6 +85,66 @@ def _strip_markdown(texto: str) -> str:
     return texto.strip()
 
 
+NEGOCIO_KEYWORDS = [
+    "padaria", "restaurante", "bar", "lanchonete", "loja", "roupas", "confecção",
+    "salão", "barbearia", "farmácia", "drogaria", "mercado", "mercadinho",
+    "açougue", "pet shop", "oficina", "cafeteria", "pizzaria", "sorveteria",
+    "papelaria", "food truck", "ambulante", "feira", "clínica", "consultório",
+    "academia", "hotel", "pousada", "supermercado", "lavanderia", "autopeças",
+]
+
+
+def _extract_slots(user_texts: list) -> dict:
+    """Extrai dados já informados (determinístico — não depende do humor do LLM)."""
+    slots: dict = {}
+    for t in user_texts:
+        low = (t or "").lower()
+        if "negocio" not in slots:
+            m = re.search(r"tenho\s+(?:um|uma)\s+([a-zà-ú]+(?:\s+[a-zà-ú]+){0,3})", low)
+            if m:
+                val = re.split(r"\s+e\s+", m.group(1).strip())[0].strip()
+                slots["negocio"] = val
+            else:
+                for kw in NEGOCIO_KEYWORDS:
+                    if kw in low:
+                        slots["negocio"] = kw
+                        break
+        if "volume" not in slots:
+            m = (re.search(r"(\d[\d\.,]*\s*(?:mil|\bk\b)?)\s*(?:por\s*m[eê]s|/m[eê]s|mensais?)", low)
+                 or re.search(r"(?:vendo|vendas?|fatur|faturamento)[^\d]*(\d[\d\.,]*\s*(?:mil|\bk\b)?)", low))
+            if m:
+                slots["volume"] = m.group(1).strip()
+        if "comprovante" not in slots:
+            if "impress" in low:
+                slots["comprovante"] = "impresso"
+            elif "digital" in low:
+                slots["comprovante"] = "digital"
+        if "mobilidade" not in slots:
+            if re.search(r"celular por perto|com o celular", low):
+                slots["mobilidade"] = "celular por perto"
+            elif re.search(r"sozinha|sem (o )?celular|sem depender|mobilidade|independente", low):
+                slots["mobilidade"] = "funciona sozinha"
+        if "cadastro" not in slots:
+            if re.search(r"\bcnpj\b", low):
+                slots["cadastro"] = "CNPJ"
+            elif re.search(r"\bmei\b", low):
+                slots["cadastro"] = "MEI"
+            elif re.search(r"\bcpf\b", low):
+                slots["cadastro"] = "CPF"
+    return slots
+
+
+def _slots_note(slots: dict) -> str:
+    if not slots:
+        return ""
+    nomes = {"negocio": "Tipo de negócio", "volume": "Vendas mensais",
+             "comprovante": "Comprovante", "mobilidade": "Mobilidade", "cadastro": "Cadastro"}
+    linhas = "\n".join(f"- {nomes[k]}: {v}" for k, v in slots.items() if k in nomes)
+    return ("\n\n# DADOS JÁ INFORMADOS PELO CLIENTE (extraídos automaticamente)\n"
+            "Estas informações já foram dadas. NÃO pergunte nenhuma delas novamente; "
+            "confirme em meia frase e siga para a próxima informação pendente.\n" + linhas)
+
+
 def _load() -> dict:
     if not CONFIG_PATH.exists() and EXAMPLE_PATH.exists():
         _save(json.loads(EXAMPLE_PATH.read_text(encoding="utf-8")))
@@ -276,7 +336,6 @@ async def whatsapp_message(request: Request):
         return {"ok": True, "status": "no_text"}
 
     cfg = _load()
-    system = _build_system(cfg)
     llm = cfg.get("llm") or {}
 
     base = llm.get("base_url") or "http://127.0.0.1:8888/v1"
@@ -285,6 +344,8 @@ async def whatsapp_message(request: Request):
 
     _history_append(from_, "user", texto)
     hist = _history_get(from_)
+    user_texts = [m["content"] for m in hist if m["role"] == "user"]
+    system = _build_system(cfg) + _slots_note(_extract_slots(user_texts))
     messages = [{"role": "system", "content": system}]
     messages += [{"role": m["role"], "content": m["content"]} for m in hist]
 
