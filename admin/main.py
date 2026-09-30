@@ -228,6 +228,19 @@ def _fallback_question(slots: dict) -> str:
     return "Quer que eu te mostre como fica a taxa no seu volume?"
 
 
+def _recommendation_fallback(modelo: dict, slots: dict) -> str:
+    nome = ((modelo or {}).get("nome") or "modelo").strip()
+    neg = str(slots.get("negocio") or "").strip()
+    alvo = f", a ideal pro seu {neg}" if neg else ", a ideal pra você"
+    return f"Tô te enviando o link da {nome}{alvo}. Obrigado! Se precisar, tô por aqui."
+
+
+def _strip_all_questions(texto: str) -> str:
+    """Na recomendação: remove TODAS as frases de pergunta."""
+    kept = [p for p in _split_sentences(texto) if "?" not in p]
+    return "\n\n".join(kept).strip()
+
+
 def _keep_first_question(texto: str) -> str:
     """Garante no máximo 1 frase de pergunta por mensagem."""
     out, seen_q = [], False
@@ -503,11 +516,14 @@ async def whatsapp_message(request: Request):
     messages = [{"role": "system", "content": system}]
     messages += [{"role": m["role"], "content": m["content"]} for m in hist]
 
+    # Raciocínio só nos casos complexos: simples responde rápido, difícil responde certo
+    complex_case = len(slots) >= 3 or len(texto) > 150 or len(hist) > 10
+    print(f"[llm] thinking={complex_case} slots={list(slots)}", flush=True)
     try:
         llm_resp = _http_json(
             base + "/chat/completions",
             {"Authorization": "Bearer " + llm_key},
-            {"model": model, "messages": messages, "max_tokens": 4096},
+            {"model": model, "messages": messages, "max_tokens": 4096, "enable_thinking": complex_case},
         )
     except Exception as e:
         return JSONResponse({"ok": False, "erro": "llm: " + str(e)}, status_code=502)
@@ -525,6 +541,11 @@ async def whatsapp_message(request: Request):
     resposta = _strip_repeated_questions(resposta, slots)
     resposta = _strip_cadastro_question(resposta, slots)
     resposta = _keep_first_question(resposta)
+    modelo_pre = _detect_model(resposta, cfg.get("modelos") or [])
+    if modelo_pre:
+        resposta = _strip_all_questions(resposta)
+        if not resposta:
+            resposta = _recommendation_fallback(modelo_pre, slots)
     if not resposta:
         resposta = _fallback_question(slots)
     _history_append(from_, "assistant", resposta)
