@@ -102,7 +102,7 @@ def _extract_slots(user_texts: list) -> dict:
         if "negocio" not in slots:
             m = re.search(r"tenho\s+(?:um|uma)\s+([a-zà-ú]+(?:\s+[a-zà-ú]+){0,3})", low)
             if m:
-                val = re.split(r"\s+e\s+", m.group(1).strip())[0].strip()
+                val = re.split(r"\s+e(?:\s+|$)", m.group(1).strip())[0].strip()
                 slots["negocio"] = val
             else:
                 for kw in NEGOCIO_KEYWORDS:
