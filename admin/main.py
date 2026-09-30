@@ -507,7 +507,7 @@ async def whatsapp_message(request: Request):
         llm_resp = _http_json(
             base + "/chat/completions",
             {"Authorization": "Bearer " + llm_key},
-            {"model": model, "messages": messages, "max_tokens": 2048},
+            {"model": model, "messages": messages, "max_tokens": 4096},
         )
     except Exception as e:
         return JSONResponse({"ok": False, "erro": "llm: " + str(e)}, status_code=502)
