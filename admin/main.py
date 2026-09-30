@@ -152,21 +152,53 @@ def _extract_slots(user_texts: list) -> dict:
                 slots["mobilidade"] = "celular por perto"
             elif re.search(r"sozinha|sem (o )?celular|sem depender|mobilidade|independente", low):
                 slots["mobilidade"] = "funciona sozinha"
-        if "cadastro" not in slots:
-            if re.search(r"\bcnpj\b", low):
-                slots["cadastro"] = "CNPJ"
-            elif re.search(r"\bmei\b", low):
-                slots["cadastro"] = "MEI"
-            elif re.search(r"\bcpf\b", low):
-                slots["cadastro"] = "CPF"
     return slots
+
+
+SLOT_QUESTION_PATTERNS = {
+    "negocio": [r"que tipo de neg[óo]cio"],
+    "mobilidade": [r"celular por perto", r"funcione sozinha"],
+    "comprovante": [r"comprovante impresso ou", r"impresso ou o digital"],
+    "volume": [r"faixa de vendas"],
+}
+
+CADASTRO_QUESTION_PAT = r"cpf.{0,30}mei.{0,30}cnpj|cnpj.{0,30}mei|mei ou cnpj|cpf ou cnpj|no cpf"
+
+
+def _strip_cadastro_question(texto: str) -> str:
+    """NUNCA perguntar CPF/MEI/CNPJ: remove essas perguntas sempre, mesmo sem dado conhecido."""
+    parts = re.split(r"(?<=[?!\n])", texto)
+    kept = [p for p in parts
+            if not (re.search(r"\?", p) and re.search(CADASTRO_QUESTION_PAT, p, re.IGNORECASE))]
+    out = "".join(kept).strip()
+    if not out:
+        out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
+    return re.sub(r"\n{3,}", "\n\n", out).strip()
+
+
+def _strip_repeated_questions(texto: str, slots: dict) -> str:
+    """Remove frases de pergunta sobre dados que o cliente já informou."""
+    if not slots:
+        return texto
+    pats = []
+    for k in slots:
+        pats += SLOT_QUESTION_PATTERNS.get(k, [])
+    if not pats:
+        return texto
+    parts = re.split(r"(?<=[?!\n])", texto)
+    kept = [p for p in parts
+            if not (re.search(r"\?", p) and any(re.search(pat, p, re.IGNORECASE) for pat in pats))]
+    out = "".join(kept).strip()
+    if not out:
+        out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
+    return re.sub(r"\n{3,}", "\n\n", out).strip()
 
 
 def _slots_note(slots: dict) -> str:
     if not slots:
         return ""
     nomes = {"negocio": "Tipo de negócio", "volume": "Vendas mensais",
-             "comprovante": "Comprovante", "mobilidade": "Mobilidade", "cadastro": "Cadastro"}
+             "comprovante": "Comprovante", "mobilidade": "Mobilidade"}
     linhas = "\n".join(f"- {nomes[k]}: {v}" for k, v in slots.items() if k in nomes)
     return ("\n\n# DADOS JÁ INFORMADOS PELO CLIENTE (extraídos automaticamente)\n"
             "Estas informações já foram dadas. NÃO pergunte nenhuma delas novamente; "
@@ -396,7 +428,8 @@ async def whatsapp_message(request: Request):
     _history_append(from_, "user", texto)
     hist = _history_get(from_)
     user_texts = [m["content"] for m in hist if m["role"] == "user"]
-    system = _build_system(cfg) + _slots_note(_extract_slots(user_texts))
+    slots = _extract_slots(user_texts)
+    system = _build_system(cfg) + _slots_note(slots)
     messages = [{"role": "system", "content": system}]
     messages += [{"role": m["role"], "content": m["content"]} for m in hist]
 
@@ -417,6 +450,8 @@ async def whatsapp_message(request: Request):
         return {"ok": True, "status": "llm_empty"}
 
     resposta = _strip_markdown(resposta)
+    resposta = _strip_repeated_questions(resposta, slots)
+    resposta = _strip_cadastro_question(resposta)
     _history_append(from_, "assistant", resposta)
 
     try:
