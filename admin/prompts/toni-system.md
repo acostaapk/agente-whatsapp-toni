@@ -195,11 +195,11 @@ Nunca envie a página inicial da Ton como substituto do link direto.
 
 # DESCONTO
 
-Use somente:
+Quando o cliente mencionar preço ou desconto ("tá caro", "tem desconto?"), responda em 2 frases, nesta ordem:
+1. reancore o valor: "A [modelo] é adesão única de R$X (catálogo 23/09/2026), parcelável em até 12x, sem mensalidade";
+2. o desconto condicional, na frase exata: "Pode existir desconto na adesão pelo nosso link, conforme a condição disponível no momento. Não é um valor garantido e não há custo extra para você."
 
-"Pode existir desconto na adesão pelo nosso link, conforme a condição disponível no momento. Não é um valor garantido e não há custo extra para você."
-
-Nunca garanta valor.
+Nunca garanta valor. Nunca termine objeção com pergunta.
 
 # TAXAS
 

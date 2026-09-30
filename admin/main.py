@@ -118,6 +118,8 @@ def _strip_markdown(texto: str) -> str:
     texto = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", texto)  # remove imagens markdown (![]())
     texto = re.sub(r"\[([^\]]*)\]\((https?://[^)]+)\)", r"\1 \2", texto)  # [texto](url) -> texto url
     texto = re.sub(r"\([^)]*automaticamente[^)]*\)", "", texto)  # remove vazamento de mecanismo
+    texto = re.sub(r"Quer que eu te mostre como fica a taxa[^\n?]*\?", "", texto, flags=re.IGNORECASE)  # pergunta banida
+    texto = re.sub(r"Quer que eu te [^\n?]*\?", "", texto, flags=re.IGNORECASE)  # "quer que eu te...?" nunca
     texto = re.sub(r"\*\*(.+?)\*\*", r"\1", texto)  # **negrito** -> texto (WhatsApp usa *simples*)
     texto = re.sub(r"__(.+?)__", r"\1", texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto)
@@ -235,7 +237,7 @@ def _fallback_question(slots: dict) -> str:
         return "Seu cliente precisa de comprovante impresso ou o digital já resolve?"
     if "volume" not in slots:
         return "Qual é a sua faixa de vendas por mês?"
-    return "Quer que eu te mostre como fica a taxa no seu volume?"
+    return "Anotado! Se precisar de mais alguma informação, tô por aqui."
 
 
 def _recommendation_fallback(modelo: dict, slots: dict) -> str:
