@@ -1,5 +1,6 @@
 import json
 import base64
+import os
 import re
 import time
 import threading
@@ -21,11 +22,38 @@ app = FastAPI(title="Admin — Agente WhatsApp Toní")
 
 VERIFY_TOKEN = "toni-verify-2026"
 
-# Conversa por número (memória em processo; uvicorn roda com 1 worker)
+# Conversa por número (persistida em disco; uvicorn roda com 1 worker)
+HISTORY_PATH = BASE / "config" / "history.json"
 HISTORY = {}
 HISTORY_LOCK = threading.Lock()
 MAX_HISTORY = 20
 HISTORY_TTL = 3600  # 1h
+MAX_PHONES = 500
+
+
+def _history_load() -> None:
+    try:
+        if HISTORY_PATH.exists():
+            data = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                now = time.time()
+                with HISTORY_LOCK:
+                    for phone, msgs in data.items():
+                        if isinstance(msgs, list):
+                            kept = [m for m in msgs if now - m.get("ts", 0) < HISTORY_TTL][-MAX_HISTORY:]
+                            if kept:
+                                HISTORY[phone] = kept
+    except Exception as e:
+        print(f"[history] load falhou: {e}", flush=True)
+
+
+def _history_save() -> None:
+    try:
+        tmp = HISTORY_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(HISTORY, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, HISTORY_PATH)
+    except Exception as e:
+        print(f"[history] save falhou: {e}", flush=True)
 
 
 def _history_get(phone: str) -> list:
@@ -39,6 +67,13 @@ def _history_append(phone: str, role: str, content: str) -> None:
         hist = HISTORY.setdefault(phone, [])
         hist.append({"role": role, "content": content, "ts": time.time()})
         del hist[:-MAX_HISTORY]
+        if len(HISTORY) > MAX_PHONES:
+            oldest = min(HISTORY, key=lambda p: HISTORY[p][-1].get("ts", 0) if HISTORY[p] else 0)
+            del HISTORY[oldest]
+        _history_save()
+
+
+_history_load()
 
 
 def _strip_markdown(texto: str) -> str:

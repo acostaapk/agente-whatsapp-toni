@@ -17,3 +17,4 @@ infra/qr-*.png
 
 # OS / editor
 .DS_Store
+admin/config/history.json
