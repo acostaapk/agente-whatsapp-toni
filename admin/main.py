@@ -87,6 +87,16 @@ def _norm(s: str) -> str:
 
 FORGET_PREFIXES = ("esquec", "limpar conversa", "limpar o historico", "recomecar", "resetar conversa", "apagar conversa", "apagar o historico")
 
+GREETING_EXACT = ("oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "opa", "e aí", "e ai",
+                  "hello", "hi", "começar", "comecar", "início", "inicio")
+
+CANNED_GREETING = ("Oi! Sou o Toni, parceiro Ton. Tenho 4 opções de maquininhas e posso te ajudar "
+                   "a escolher o modelo que faz mais sentido pra você. Que tipo de negócio você tem?")
+
+
+def _is_greeting(texto: str) -> bool:
+    return _norm(texto).strip("!., ") in GREETING_EXACT
+
 
 def _is_forget(texto: str) -> bool:
     n = _norm(texto)
@@ -504,6 +514,18 @@ async def whatsapp_message(request: Request):
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
+    if (not _history_get(from_) and _is_greeting(texto)
+            and not _detect_model(texto, cfg.get("modelos") or [])
+            and not _extract_slots([texto])):
+        _history_append(from_, "user", texto)
+        _history_append(from_, "assistant", CANNED_GREETING)
+        print(f"[greet] saudação padrão para {from_}", flush=True)
+        try:
+            _send_reply(cfg, from_, CANNED_GREETING)
+            return {"ok": True, "status": "greeted"}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
     base = llm.get("base_url") or "http://127.0.0.1:8888/v1"
     model = llm.get("model") or "Qwen/Qwen2.5-14B-Instruct-GGUF"
     llm_key = llm.get("api_key") or ""
@@ -562,6 +584,9 @@ async def whatsapp_message(request: Request):
 
         if modelo:
             texto = _apply_model_link(texto, modelo)
+            low = texto.lower()
+            if not any(w in low for w in ("obrigado", "valeu", "por aqui", "disposi", "precisando")):
+                texto = texto.rstrip() + "\n\n" + _recommendation_fallback(modelo, slots)
         texto = _apply_app_link(texto, cfg)
 
         if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
