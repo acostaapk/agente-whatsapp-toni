@@ -166,13 +166,13 @@ SLOT_QUESTION_PATTERNS = {
 CADASTRO_QUESTION_PAT = r"cpf.{0,30}mei.{0,30}cnpj|cnpj.{0,30}mei|mei ou cnpj|cpf ou cnpj|no cpf"
 
 
-def _strip_cadastro_question(texto: str) -> str:
+def _strip_cadastro_question(texto: str, slots: dict) -> str:
     """NUNCA perguntar CPF/MEI/CNPJ: remove essas perguntas sempre, mesmo sem dado conhecido."""
     kept = [p for p in _split_sentences(texto)
             if not (re.search(r"\?", p) and re.search(CADASTRO_QUESTION_PAT, p, re.IGNORECASE))]
     out = " ".join(kept).strip()
     if not out:
-        out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
+        out = _fallback_question(slots)
     return re.sub(r"\n{3,}", "\n\n", out).strip()
 
 
@@ -190,6 +190,54 @@ def _split_sentences(texto: str) -> list:
     return [p for p in re.split(r"(?<=[.?!])\s+|\n+", texto) if p.strip()]
 
 
+INTRO_PAT = r"sou o toni\b|meu nome [ée] toni\b|me chamo toni\b"
+GREETING_PAT = r"^(oi|ol[aá]|opa|e a[ií]|bom dia|boa tarde|boa noite)[!.,\s]*$"
+
+
+def _strip_reintro(texto: str, is_fresh: bool) -> str:
+    """Remove auto-apresentação e saudações soltas quando a conversa já começou."""
+    if is_fresh:
+        return texto
+    kept = [p for p in _split_sentences(texto)
+            if not re.search(INTRO_PAT, p, re.IGNORECASE)
+            and not re.match(GREETING_PAT, p.strip(), re.IGNORECASE)]
+    return " ".join(kept).strip()
+
+
+def _fallback_question(slots: dict) -> str:
+    if "negocio" not in slots:
+        return "Que tipo de negócio você tem?"
+    neg = str(slots["negocio"]).capitalize()
+    if "mobilidade" not in slots:
+        return f"{neg}, anotado! Você vende com o celular por perto ou precisa de uma maquininha que funcione sozinha?"
+    if "comprovante" not in slots:
+        return "Seu cliente precisa de comprovante impresso ou o digital já resolve?"
+    if "volume" not in slots:
+        return "Qual é a sua faixa de vendas por mês?"
+    return "Quer que eu te mostre como fica a taxa no seu volume?"
+
+
+def _strip_reintro(texto: str, is_fresh: bool) -> str:
+    """Remove auto-apresentação quando a conversa já começou."""
+    if is_fresh:
+        return texto
+    kept = [p for p in _split_sentences(texto)
+            if not re.search(INTRO_PAT, p, re.IGNORECASE)]
+    return " ".join(kept).strip()
+
+
+def _keep_first_question(texto: str) -> str:
+    """Garante no máximo 1 frase de pergunta por mensagem."""
+    out, seen_q = [], False
+    for p in _split_sentences(texto):
+        if re.search(r"\?", p):
+            if seen_q:
+                continue
+            seen_q = True
+        out.append(p)
+    return " ".join(out).strip()
+
+
 def _strip_repeated_questions(texto: str, slots: dict) -> str:
     """Remove frases de pergunta sobre dados que o cliente já informou."""
     if not slots:
@@ -203,7 +251,7 @@ def _strip_repeated_questions(texto: str, slots: dict) -> str:
             if not (re.search(r"\?", p) and any(re.search(pat, p, re.IGNORECASE) for pat in pats))]
     out = " ".join(kept).strip()
     if not out:
-        out = "Anotado! Quer que eu te mostre como fica a taxa no seu volume?"
+        out = _fallback_question(slots)
     return re.sub(r"\n{3,}", "\n\n", out).strip()
 
 
@@ -470,8 +518,13 @@ async def whatsapp_message(request: Request):
         return {"ok": True, "status": "llm_empty"}
 
     resposta = _strip_markdown(resposta)
+    is_fresh = len([m for m in hist if m["role"] == "user"]) <= 1
+    resposta = _strip_reintro(resposta, is_fresh)
     resposta = _strip_repeated_questions(resposta, slots)
-    resposta = _strip_cadastro_question(resposta)
+    resposta = _strip_cadastro_question(resposta, slots)
+    resposta = _keep_first_question(resposta)
+    if not resposta:
+        resposta = _fallback_question(slots)
     _history_append(from_, "assistant", resposta)
 
     try:
