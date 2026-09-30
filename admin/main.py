@@ -472,7 +472,7 @@ async def whatsapp_message(request: Request):
 
     if _is_forget(texto):
         _history_clear(from_)
-        confirm = "Pronto! Esqueci nossa conversa anterior. Vamos recomeçar: que tipo de negócio você tem?"
+        confirm = "Pronto, esqueci nossa conversa anterior. Se precisar de ajuda com maquininha, é só chamar! 👋"
         print(f"[forget] histórico apagado para {from_}", flush=True)
         try:
             _send_reply(cfg, from_, confirm)
