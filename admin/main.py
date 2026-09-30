@@ -164,6 +164,19 @@ def _slots_note(slots: dict) -> str:
             "confirme em meia frase e siga para a próxima informação pendente.\n" + linhas)
 
 
+def _apply_model_link(texto: str, modelo: dict) -> str:
+    """Garante o link curto e CORRETO do modelo: troca qualquer checkout longo
+    (ou link curto de outro modelo) pelo link oficial do modelo detectado."""
+    short = ((modelo or {}).get("link") or "").strip()
+    if not short:
+        return texto
+    texto = re.sub(r"https?://(?:www\.)?ton\.com\.br/checkout[^\s]*", short, texto)
+    texto = re.sub(r"https?://analisereview\.com\.br/ton/[^\s]*", short, texto)
+    if short not in texto:
+        texto = texto.rstrip() + "\n\n" + short
+    return texto.strip()
+
+
 def _load() -> dict:
     if not CONFIG_PATH.exists() and EXAMPLE_PATH.exists():
         _save(json.loads(EXAMPLE_PATH.read_text(encoding="utf-8")))
@@ -406,6 +419,9 @@ async def whatsapp_message(request: Request):
             url = (m.get("foto") or "").strip()
             if url and url in texto:
                 texto = texto.replace(url, "").strip()
+
+        if modelo:
+            texto = _apply_model_link(texto, modelo)
 
         if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
             _send_media(cfg, from_, modelo["foto"].strip())
