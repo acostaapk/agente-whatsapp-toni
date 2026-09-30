@@ -247,6 +247,21 @@ def _recommendation_fallback(modelo: dict, slots: dict) -> str:
     return f"Tô te enviando o link da {nome}{alvo}. Obrigado! Se precisar, tô por aqui."
 
 
+OBJECTION_PAT = r"t[áa] caro|muito caro|tem desconto|é caro|quanto custa|\bpre[çc]o\b|\bvalor\b"
+
+
+def _price_anchor(user_last: str, last_modelo: dict) -> str:
+    """Objeção de preço sem reancoragem no texto: devolve a linha de valor ou ''."""
+    if not last_modelo:
+        return ""
+    if not re.search(OBJECTION_PAT, user_last or "", re.IGNORECASE):
+        return ""
+    preco = (last_modelo.get("preco") or "").strip()
+    if not preco:
+        return ""
+    return f"A {last_modelo.get('nome')} é adesão única de {preco} (catálogo 23/09/2026), parcelável em até 12x, sem mensalidade."
+
+
 def _strip_all_questions(texto: str) -> str:
     """Na recomendação: remove TODAS as frases de pergunta."""
     kept = [p for p in _split_sentences(texto) if "?" not in p]
@@ -589,6 +604,18 @@ async def whatsapp_message(request: Request):
             low = texto.lower()
             if not any(w in low for w in ("obrigado", "valeu", "por aqui", "disposi", "precisando")):
                 texto = texto.rstrip() + "\n\n" + _recommendation_fallback(modelo, slots)
+        user_last = next((m["content"] for m in reversed(hist) if m["role"] == "user"), "")
+        last_modelo = modelo
+        if not last_modelo:
+            for m in reversed(hist):
+                if m["role"] == "assistant":
+                    last_modelo = _detect_model(m["content"], cfg.get("modelos") or [])
+                    if last_modelo:
+                        break
+        if last_modelo and "R$" not in texto:
+            anchor = _price_anchor(user_last, last_modelo)
+            if anchor:
+                texto = anchor + "\n\n" + texto
         texto = _apply_app_link(texto, cfg)
 
         if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
