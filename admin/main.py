@@ -4,6 +4,7 @@ import os
 import re
 import time
 import threading
+import unicodedata
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -71,6 +72,24 @@ def _history_append(phone: str, role: str, content: str) -> None:
             oldest = min(HISTORY, key=lambda p: HISTORY[p][-1].get("ts", 0) if HISTORY[p] else 0)
             del HISTORY[oldest]
         _history_save()
+
+
+def _history_clear(phone: str) -> None:
+    with HISTORY_LOCK:
+        HISTORY.pop(phone, None)
+        _history_save()
+
+
+def _norm(s: str) -> str:
+    s = (s or "").lower().strip()
+    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
+
+
+FORGET_PREFIXES = ("esquec", "limpar conversa", "recomecar", "resetar conversa", "apagar conversa")
+
+
+def _is_forget(texto: str) -> bool:
+    return _norm(texto).startswith(FORGET_PREFIXES)
 
 
 _history_load()
@@ -337,6 +356,16 @@ async def whatsapp_message(request: Request):
 
     cfg = _load()
     llm = cfg.get("llm") or {}
+
+    if _is_forget(texto):
+        _history_clear(from_)
+        confirm = "Pronto! Esqueci nossa conversa anterior. Vamos recomeçar: que tipo de negócio você tem?"
+        print(f"[forget] histórico apagado para {from_}", flush=True)
+        try:
+            _send_reply(cfg, from_, confirm)
+            return {"ok": True, "status": "forgot"}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
     base = llm.get("base_url") or "http://127.0.0.1:8888/v1"
     model = llm.get("model") or "Qwen/Qwen2.5-14B-Instruct-GGUF"
