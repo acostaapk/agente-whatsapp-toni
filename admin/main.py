@@ -120,7 +120,7 @@ def _strip_markdown(texto: str) -> str:
     texto = re.sub(r"\([^)]*automaticamente[^)]*\)", "", texto)  # remove vazamento de mecanismo
     texto = re.sub(r"Quer que eu te mostre como fica a taxa[^\n?]*\?", "", texto, flags=re.IGNORECASE)  # pergunta banida
     texto = re.sub(r"Quer que eu te [^\n?]*\?", "", texto, flags=re.IGNORECASE)  # "quer que eu te...?" nunca
-    texto = re.sub(r"[,.\s]*o prazo varia conforme a regi[ãa]o\.?", "", texto, flags=re.IGNORECASE)  # prazo inventado
+    texto = re.sub(r",?\s*(e )?o prazo varia conforme a regi[ãa]o[.?!]?", ".", texto, flags=re.IGNORECASE)  # prazo inventado
     texto = re.sub(r"\*\*(.+?)\*\*", r"\1", texto)  # **negrito** -> texto (WhatsApp usa *simples*)
     texto = re.sub(r"__(.+?)__", r"\1", texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto)
