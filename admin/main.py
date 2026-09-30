@@ -242,6 +242,13 @@ def _http_json(url: str, headers: dict, body: dict) -> dict:
 
 
 def _build_system(cfg: dict) -> str:
+    sm = ""
+    prompt_file = BASE / "prompts" / "toni-system.md"
+    if prompt_file.exists():
+        sm = prompt_file.read_text(encoding="utf-8")
+        sm = re.sub(r"<!--.*?-->", "", sm, flags=re.DOTALL).strip()
+    if not sm.strip():
+        sm = cfg.get("system_message") or ""  # fallback legado
     repl = {
         "{{agente_nome}}": cfg.get("agente_nome") or "",
         "{{empresa_nome}}": cfg.get("empresa_nome") or "",
