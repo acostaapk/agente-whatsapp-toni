@@ -458,6 +458,33 @@ def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "") -> Non
     )
 
 
+POLL_VALUES = ["Pix 0%", "Sem mensalidade", "Garantia vitalícia", "Receba na hora"]
+
+
+def _send_poll(cfg: dict, from_: str, name: str, values: list, selectable: int) -> None:
+    evo = cfg.get("evolution") or {}
+    api_url = evo.get("api_url") or "http://localhost:8080"
+    api_key = evo.get("api_key") or ""
+    instance = evo.get("instance") or "toni"
+    _http_json(
+        f"{api_url}/message/sendPoll/{instance}",
+        {"apikey": api_key},
+        {"number": from_, "name": name, "selectableCount": selectable, "values": values},
+    )
+
+
+def _already_offered(hist: list, modelos: list) -> bool:
+    """True se alguma resposta anterior já continha link de modelo (oferta já feita)."""
+    links = [m.get("link") or "" for m in (modelos or []) if m.get("link")]
+    for h in hist or []:
+        if h.get("role") != "assistant":
+            continue
+        content = h.get("content") or ""
+        if any(url and url in content for url in links):
+            return True
+    return False
+
+
 def _detect_model(resposta: str, modelos: list):
     """Retorna o primeiro modelo mencionado na resposta (nome mais longo primeiro)."""
     if not modelos:
@@ -654,10 +681,16 @@ async def whatsapp_message(request: Request):
                 texto = anchor + "\n\n" + texto
         texto = _apply_app_link(texto, cfg)
 
-        if canal == "baileys" and modelo and (modelo.get("foto") or "").strip():
-            _send_media(cfg, from_, modelo["foto"].strip())
         for bubble in _split_bubbles(texto):
             _send_reply(cfg, from_, bubble)
+        if canal == "baileys" and modelo and not _already_offered(hist, cfg.get("modelos") or []):
+            nome = ((modelo.get("nome") or "modelo").strip())
+            foto = (modelo.get("foto") or "").strip()
+            link = (modelo.get("link") or "").strip()
+            if foto:
+                caption = f"{nome} — peça pelo link: {link}" if link else nome
+                _send_media(cfg, from_, foto, caption)
+            _send_poll(cfg, from_, f"O que mais te interessou na {nome}?", POLL_VALUES, len(POLL_VALUES))
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
         return {"ok": True, "status": "sent", "modelo": (modelo or {}).get("id"), "resposta": texto}
