@@ -198,7 +198,7 @@ def _apply_app_link(texto: str, cfg: dict) -> str:
     app_link = (cfg.get("link_app") or "").strip()
     if not app_link or app_link in texto:
         return texto
-    if re.search(r"link do app|baixar o app|baixe o app|app ton|aplicativo ton", texto, re.IGNORECASE):
+    if re.search(r"link do app|link do aplicativo|baixar o app|baixe o app|app ton|app da ton|aplicativo ton|aplicativo da ton", texto, re.IGNORECASE):
         texto = texto.rstrip() + "\n\n" + app_link
     return texto.strip()
 
