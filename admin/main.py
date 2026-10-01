@@ -126,6 +126,75 @@ def _is_forget(texto: str) -> bool:
 _history_load()
 
 
+FOLLOWUP_MINUTES = 10
+FOLLOWUP_PATH = BASE / "config" / "followups.json"
+FOLLOWUP_TEXT = "Oi! Conseguiu finalizar sua compra? Se travou em alguma parte, me fala que eu te ajudo. 🙂"
+FOLLOWUPS = {}
+
+
+def _followups_load() -> None:
+    try:
+        if FOLLOWUP_PATH.exists():
+            data = json.loads(FOLLOWUP_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                FOLLOWUPS.update(data)
+    except Exception as e:
+        print(f"[followup] load falhou: {e}", flush=True)
+
+
+def _followups_save() -> None:
+    try:
+        tmp = FOLLOWUP_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(FOLLOWUPS, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, FOLLOWUP_PATH)
+    except Exception as e:
+        print(f"[followup] save falhou: {e}", flush=True)
+
+
+def _needs_purchase_followup(phone: str) -> bool:
+    msgs = _history_get(phone)
+    if not msgs or msgs[-1].get("role") != "assistant":
+        return False
+    last = msgs[-1]
+    if time.time() - last.get("ts", 0) < FOLLOWUP_MINUTES * 60:
+        return False
+    content = last.get("content") or ""
+    links = [(m.get("link") or "") for m in (_load().get("modelos") or []) if m.get("link")]
+    offered = any(url and url in content for url in links)
+    gated = "já fez a compra" in content or "Android ou iPhone" in content
+    if not (offered or gated):
+        return False
+    for m in msgs:
+        if m.get("role") == "user" and re.search(
+                r"comprei|comprado|finalizei|finalizado|j[áa] pedi|pedido feito|acabei de (comprar|pedir)|pagamento feito",
+                m.get("content") or "", re.IGNORECASE):
+            return False
+    if FOLLOWUPS.get(phone) == last.get("ts"):
+        return False
+    return True
+
+
+def _followup_loop() -> None:
+    while True:
+        time.sleep(60)
+        try:
+            for phone in list(HISTORY.keys()):
+                if _needs_purchase_followup(phone):
+                    cfg = _load()
+                    _send_reply(cfg, phone, FOLLOWUP_TEXT)
+                    _history_append(phone, "assistant", FOLLOWUP_TEXT)
+                    msgs = _history_get(phone)
+                    FOLLOWUPS[phone] = msgs[-2].get("ts") if len(msgs) >= 2 else time.time()
+                    _followups_save()
+                    print(f"[followup] ajuda pós-oferta para {phone}", flush=True)
+        except Exception as e:
+            print(f"[followup] loop falhou: {e}", flush=True)
+
+
+_followups_load()
+threading.Thread(target=_followup_loop, daemon=True).start()
+
+
 DISCOUNT_CANONICAL = ("Pode existir desconto na adesão pelo nosso link, conforme a condição disponível "
                       "no momento. Não é um valor garantido e não há custo extra para você.")
 
@@ -206,6 +275,11 @@ def _extract_slots(user_texts: list) -> dict:
                  or re.search(r"\bsou\s+[oa]\s+([A-ZÀ-Ú][a-zà-ú]+)", t or ""))
             if m and m.group(1).lower() not in ("toni", "ton"):
                 slots["nome"] = m.group(1).strip()
+        if "celular_so" not in slots:
+            if re.search(r"iphone|\bios\b|ipad", low) or re.search(r"apple(?! pay)", low):
+                slots["celular_so"] = "ios"
+            elif re.search(r"android|samsung|galaxy|motorola|xiaomi|pixel|lenovo|lg\b", low):
+                slots["celular_so"] = "android"
     return slots
 
 
@@ -229,14 +303,32 @@ def _strip_cadastro_question(texto: str, slots: dict) -> str:
     return re.sub(r"\n{3,}", "\n\n", out).strip()
 
 
-def _apply_app_link(texto: str, cfg: dict) -> str:
-    """Se a resposta fala do link do app mas não traz URL, anexa o link_app."""
-    app_link = (cfg.get("link_app") or "").strip()
-    if not app_link or app_link in texto:
-        return texto
-    if re.search(r"link do app|link do aplicativo|baixar o app|baixe o app|app ton|app da ton|aplicativo ton|aplicativo da ton", texto, re.IGNORECASE):
-        texto = texto.rstrip() + "\n\n" + app_link
-    return texto.strip()
+def _apply_app_link(texto: str, cfg: dict, slots: dict = None, hist: list = None) -> str:
+    """Anexa o link do app da LOJA CERTA (App Store/Play), mas SÓ se a compra foi confirmada."""
+    slots = slots or {}
+    hist = hist or []
+    if not re.search(r"link do app|link do aplicativo|baixar o app|baixe o app|app ton|app da ton|aplicativo ton|aplicativo da ton", texto, re.IGNORECASE):
+        return texto.strip()
+    universal = (cfg.get("link_app") or "").strip()
+    ios = (cfg.get("link_app_ios") or "").strip() or universal
+    android = (cfg.get("link_app_android") or "").strip() or universal
+    if (universal and universal in texto) or (ios and ios in texto) or (android and android in texto):
+        return texto.strip()
+    asst = [m.get("content") or "" for m in hist if m.get("role") == "assistant"]
+    users = [m.get("content") or "" for m in hist if m.get("role") == "user"]
+    purchased = bool(re.search(r"comprei|comprado|finalizei|finalizado|j[áa] pedi|pedido feito|acabei de (comprar|pedir)|pagamento feito", users[-1] if users else "", re.IGNORECASE))
+    if not purchased:
+        if any("já fez a compra" in a for a in asst):
+            return texto.strip()
+        return texto.rstrip() + "\n\nVocê já fez a compra? Assim te mando o link do app. 🙂"
+    so = (slots.get("celular_so") or "").strip()
+    if so == "ios":
+        return texto.rstrip() + "\n\n" + ios
+    if so == "android":
+        return texto.rstrip() + "\n\n" + android
+    if any("Android ou iPhone" in a for a in asst):
+        return texto.rstrip() + "\n\n" + universal
+    return texto.rstrip() + "\n\nSeu celular é Android ou iPhone? Assim te mando o link certo da loja. 🙂"
 
 
 def _split_bubbles(texto: str) -> list:
@@ -383,7 +475,8 @@ def _slots_note(slots: dict) -> str:
     if not slots:
         return ""
     nomes = {"negocio": "Tipo de negócio", "volume": "Vendas mensais",
-             "comprovante": "Comprovante", "mobilidade": "Mobilidade"}
+             "comprovante": "Comprovante", "mobilidade": "Mobilidade",
+             "nome": "Nome", "celular_so": "Celular"}
     linhas = "\n".join(f"- {nomes[k]}: {v}" for k, v in slots.items() if k in nomes)
     return ("\n\n# DADOS JÁ INFORMADOS PELO CLIENTE (extraídos automaticamente)\n"
             "Estas informações já foram dadas. NÃO pergunte nenhuma delas novamente; "
@@ -865,7 +958,7 @@ async def whatsapp_message(request: Request):
             anchor = _price_anchor(user_last, last_modelo)
             if anchor:
                 texto = anchor + "\n\n" + texto
-        texto = _apply_app_link(texto, cfg)
+        texto = _apply_app_link(texto, cfg, slots, hist)
 
         for bubble in _split_bubbles(texto):
             _send_reply(cfg, from_, bubble)
