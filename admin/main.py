@@ -502,7 +502,7 @@ def _send_reply(cfg: dict, from_: str, resposta: str) -> None:
         )
 
 
-def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "") -> None:
+def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "", mediatype: str = "image") -> None:
     evo = cfg.get("evolution") or {}
     api_url = evo.get("api_url") or "http://localhost:8080"
     api_key = evo.get("api_key") or ""
@@ -510,8 +510,43 @@ def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "") -> Non
     _http_json(
         f"{api_url}/message/sendMedia/{instance}",
         {"apikey": api_key},
-        {"number": from_, "mediatype": "image", "media": media_url, "caption": caption},
+        {"number": from_, "mediatype": mediatype, "media": media_url, "caption": caption},
     )
+
+
+def _send_voice(cfg: dict, from_: str, ogg_path: str) -> None:
+    import base64
+    with open(ogg_path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    _send_media(cfg, from_, b64, "", "audio")
+
+
+def _send_voice_or_text(cfg: dict, from_: str, texto: str) -> None:
+    """Voz em vez de texto nos momentos de conexão; cai pra texto se o TTS falhar."""
+    try:
+        from tts import tts_ogg
+        ogg = tts_ogg(texto)
+    except Exception as e:
+        print(f"[tts] indisponível: {e}", flush=True)
+        ogg = None
+    if ogg:
+        print(f"[voice] áudio para {from_}", flush=True)
+        _send_voice(cfg, from_, ogg)
+    else:
+        _send_reply(cfg, from_, texto)
+
+
+def _extract_audio_url(body) -> str:
+    """URL do áudio (Evolution/Baileys) ou ''."""
+    try:
+        if body.get("event") == "messages.upsert":
+            data = body.get("data") or {}
+            msg = data.get("message") or {}
+            audio = msg.get("audioMessage") or msg.get("pttMessage") or {}
+            return audio.get("url") or ""
+    except Exception:
+        pass
+    return ""
 
 
 def _already_offered(hist: list, modelos: list) -> bool:
@@ -608,7 +643,21 @@ async def whatsapp_message(request: Request):
 
     from_, texto = _extract_message(body)
     print(f"[webhook] from={from_} texto={texto!r}", flush=True)
+    audio_url = _extract_audio_url(body) if (from_ and not texto) else ""
+    if audio_url:
+        try:
+            from stt import transcribe_audio_url
+            texto = transcribe_audio_url(audio_url)
+            print(f"[stt] transcrito: {texto!r}", flush=True)
+        except Exception as e:
+            print(f"[stt] indisponível: {e}", flush=True)
+            texto = ""
     if not from_ or not texto:
+        if audio_url:
+            try:
+                _send_reply(_load(), from_, "Não consegui ouvir seu áudio, pode escrever pra mim? 🙂")
+            except Exception as e:
+                print(f"[stt] fallback falhou: {e}", flush=True)
         return {"ok": True, "status": "no_text"}
 
     cfg = _load()
@@ -631,7 +680,7 @@ async def whatsapp_message(request: Request):
         _history_append(from_, "assistant", CANNED_GREETING)
         print(f"[greet] saudação padrão para {from_}", flush=True)
         try:
-            _send_reply(cfg, from_, CANNED_GREETING)
+            _send_voice_or_text(cfg, from_, CANNED_GREETING)
             return {"ok": True, "status": "greeted"}
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
@@ -641,7 +690,7 @@ async def whatsapp_message(request: Request):
         _history_append(from_, "assistant", CANNED_REFUSAL)
         print(f"[crime] recusa + escalada para {from_}", flush=True)
         try:
-            _send_reply(cfg, from_, CANNED_REFUSAL)
+            _send_voice_or_text(cfg, from_, CANNED_REFUSAL)
             return {"ok": True, "status": "refused_crime"}
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
@@ -652,7 +701,7 @@ async def whatsapp_message(request: Request):
         _history_append(from_, "assistant", CANNED_EXIT)
         print(f"[no-interest] saída elegante para {from_}", flush=True)
         try:
-            _send_reply(cfg, from_, CANNED_EXIT)
+            _send_voice_or_text(cfg, from_, CANNED_EXIT)
             return {"ok": True, "status": "no_interest"}
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
@@ -741,7 +790,7 @@ async def whatsapp_message(request: Request):
             if foto:
                 caption = f"{nome} — peça pelo link: {link}" if link else nome
                 _send_media(cfg, from_, foto, caption)
-            _send_reply(cfg, from_, DOUBT_CHECK)
+            _send_voice_or_text(cfg, from_, DOUBT_CHECK)
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
         _history_append(from_, "assistant", texto)

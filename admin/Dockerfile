@@ -1,8 +1,10 @@
 FROM python:3.13-slim
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY main.py .
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8')"
+COPY main.py stt.py tts.py .
 COPY static/ static/
 COPY prompts/ prompts/
 EXPOSE 8090

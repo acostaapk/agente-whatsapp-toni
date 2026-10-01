@@ -13,6 +13,7 @@ admin/config/agent-config.json
 # Gerados / transitórios
 graphify-out/
 infra/qr-*.png
+admin/config/tts_cache/
 *.log
 
 # OS / editor

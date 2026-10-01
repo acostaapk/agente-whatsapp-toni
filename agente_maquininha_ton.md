@@ -1111,6 +1111,10 @@ Não desqualifique a máquina atual. 1 frase: dá pra testar sem trocar — T2 p
 
 Após a recomendação, o sistema envia sozinho: foto do modelo (com link na legenda) + "Você tem alguma dúvida até aqui? 🙂". Não anuncie a foto nem repita a pergunta.
 
+# VOZ (ida e volta)
+
+Cliente pode mandar áudio: transcrito localmente (faster-whisper small, CPU) e entra no fluxo como texto; se falhar, pede pra escrever. Bot responde com voz (Edge-TTS Antonio, ogg/opus, cache em disco) NOS momentos de conexão: saudação, recusa criminal, saída elegante e dúvida-check — nunca preço/taxa/link (sempre texto). TTS/STT trocáveis via stt.py/tts.py.
+
 # PÓS-VENDA
 
 Se o cliente disser que comprou, pediu ou finalizou:
