@@ -19,3 +19,8 @@ admin/config/tts_cache/
 # OS / editor
 .DS_Store
 admin/config/history.json
+
+# Estado de runtime (Toní 3.0)
+admin/config/lead_state.json
+admin/config/funnel.jsonl
+admin/config/followups.json

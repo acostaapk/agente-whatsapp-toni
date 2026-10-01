@@ -1,5 +1,6 @@
 import json
 import base64
+import hashlib
 import os
 import re
 import time
@@ -193,6 +194,203 @@ def _followup_loop() -> None:
 
 _followups_load()
 threading.Thread(target=_followup_loop, daemon=True).start()
+
+
+LEAD_PATH = BASE / "config" / "lead_state.json"
+FUNNEL_PATH = BASE / "config" / "funnel.jsonl"
+LEADS = {}
+
+
+def _leads_load() -> None:
+    try:
+        if LEAD_PATH.exists():
+            data = json.loads(LEAD_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                LEADS.update(data)
+    except Exception as e:
+        print(f"[lead] load falhou: {e}", flush=True)
+
+
+def _leads_save() -> None:
+    try:
+        tmp = LEAD_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(LEADS, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, LEAD_PATH)
+    except Exception as e:
+        print(f"[lead] save falhou: {e}", flush=True)
+
+
+def _log_event(event: str, phone: str, detail: str = "") -> None:
+    try:
+        ph = hashlib.sha256((phone or "").encode()).hexdigest()[:12]
+        with open(FUNNEL_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"ts": time.time(), "phone": ph, "event": event,
+                                "detail": detail}, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"[funil] log falhou: {e}", flush=True)
+
+
+INTENT_PATTERNS = [
+    ("compra", r"quero comprar|vou comprar|vou querer|vou ficar|fechado|onde compro|como compro|quero uma m[áa]quina|quero pedir|vou levar"),
+    ("link", r"me manda o link|manda o link|cad[êe] o link|link de (compra|pagamento)|link pra (comprar|pagar)"),
+    ("modelo", None),  # preenchido por _detect_model
+    ("preco", r"quanto custa|qual ([ée] o )?(valor|pre[çc]o)|pre[çc]o da|valor da|mais barata|mais em conta|menor valor|gastar o m[íi]nimo"),
+    ("desconto", r"desconto|cupom|promo[çc][ãa]o"),
+    ("taxa", r"\btaxa[s]?\b"),
+    ("suporte", r"entrega|rastre|defeito|quebr|bobina|suporte|garantia|\btroca\b|reembolso|estorno|instalar|ativar|configurar|erro\b"),
+    ("posvenda", r"comprei|chegou|pedido|pagamento (feito|aprovado)"),
+    ("renda", r"renda|indica|ganhar (dinheiro|renda)"),
+    ("reclamacao", r"reclama|insatisfeit|p[ée]ssimo|horr[íi]vel|cancelar|humano|atendente|golpe|engana"),
+    ("trocar", r"j[áa] tenho|tenho uma|trocar|minha atual|segunda|outra (m[áa]quina|maquininha)|mais uma"),
+    ("comparacao", r"compar|diferen[çc]a|melhor| versus |\b ou \b|\bx\b"),
+]
+
+TEMP_MAP = {"compra": "quente", "link": "quente", "modelo": "quente",
+            "preco": "morno", "desconto": "morno", "taxa": "morno",
+            "comparacao": "morno", "trocar": "morno"}
+SCORE_MAP = {"compra": 20, "link": 15, "modelo": 15, "preco": 10,
+             "desconto": 10, "taxa": 5, "comparacao": 5}
+
+MOTIVO_PATTERNS = [
+    ("trocar_maquininha", r"trocar|substituir|minha atual"),
+    ("segunda_maquininha", r"segunda|mais uma|outra pra|pro meu outro"),
+    ("reduzir_custos", r"taxa.*alt|car[oa]|barat|econom|sair mais barato"),
+    ("mais_mobilidade", r"\brua\b|entrega|delivery|moto|externo"),
+    ("precisa_comprovante", r"impresso|recibo|comprovante"),
+]
+
+
+def _detect_intent(texto: str, modelos: list) -> str:
+    """Prioridade: pedido explícito (preço/compra/link/…) vence menção a modelo.
+    Ex.: "quanto custa a T3?" -> preco (responde o valor primeiro)."""
+    low = texto or ""
+    for intent, pat in INTENT_PATTERNS:
+        if pat and re.search(pat, low, re.IGNORECASE):
+            return intent
+    if _detect_model(low, modelos or []):
+        return "modelo"
+    return "info"
+
+
+def _detect_motivo(texto: str) -> str:
+    for motivo, pat in MOTIVO_PATTERNS:
+        if re.search(pat, texto or "", re.IGNORECASE):
+            return motivo
+    return ""
+
+
+def _lead_update(phone: str, intent: str, motivo: str) -> dict:
+    st = LEADS.setdefault(phone, {"intencao": "", "temperatura": "frio", "motivo_compra": "",
+                                  "score": 0, "ultimo_evento": "", "ts": 0})
+    st["intencao"] = intent
+    if intent in TEMP_MAP:
+        order = {"frio": 0, "morno": 1, "quente": 2}
+        if order.get(TEMP_MAP[intent], 0) >= order.get(st.get("temperatura") or "frio", 0):
+            st["temperatura"] = TEMP_MAP[intent]
+    if motivo and not st.get("motivo_compra"):
+        st["motivo_compra"] = motivo
+    st["score"] = min(100, int(st.get("score") or 0) + SCORE_MAP.get(intent, 0))
+    st["ts"] = time.time()
+    _leads_save()
+    return st
+
+
+def _lead_event(phone: str, event: str) -> None:
+    st = LEADS.setdefault(phone, {"intencao": "", "temperatura": "frio", "motivo_compra": "",
+                                  "score": 0, "ultimo_evento": "", "ts": 0})
+    st["ultimo_evento"] = event
+    st["ts"] = time.time()
+    _leads_save()
+
+
+def _choose_model(slots: dict, user_texts: list, modelos: list):
+    """Sales Rules Engine (determinístico): devolve o modelo ou None."""
+    by_id = {m.get("id"): m for m in (modelos or [])}
+    blob = " ".join(user_texts or []).lower()
+    if re.search(r"\bt1\b", blob) and "t1" in by_id:
+        return by_id["t1"]
+    if re.search(r"gastar o m[íi]nimo|menor (investimento|valor|pre[çc]o)|mais barat|"
+                 r"economiz|entrada m[íi]nima|investir pouco|sem gastar muito", blob) and "t1" in by_id:
+        return by_id["t1"]
+    if re.search(r"android|touch|tela", blob) and "t3_smart" in by_id:
+        return by_id["t3_smart"]
+    if (slots.get("comprovante") or "") == "impresso":
+        return by_id.get("t3")
+    if (slots.get("comprovante") or "") == "digital":
+        return by_id.get("t2")
+    return None
+
+
+def _rec_package(modelo: dict, slots: dict) -> str:
+    nome = (modelo.get("nome") or "modelo").strip()
+    preco = (modelo.get("preco") or "").strip()
+    parcelas = (modelo.get("parcelas") or "em até 12x").strip()
+    mid = modelo.get("id") or ""
+    if mid == "t3_smart":
+        motivo = "ela tem tela Android e comprovante impresso"
+    elif (slots.get("comprovante") or "") == "digital":
+        motivo = "o comprovante digital já resolve pra você"
+    else:
+        motivo = "ela tem comprovante impresso"
+    out = f"Pelo que você me contou, a {nome} combina com o seu uso porque {motivo}."
+    if preco:
+        out += (f"\n\nA {nome} é adesão única de {preco} (catálogo 23/09/2026), "
+                f"parcelável {parcelas}, sem mensalidade.")
+    out += ("\n\nNos primeiros 30 dias ou até R$5 mil em vendas, débito 0,57% e crédito à vista 0,57%."
+            "\n\n" + _recommendation_fallback(modelo, slots))
+    return out
+
+
+def _price_overview(cfg: dict) -> str:
+    """Pergunta de preço sem modelo específico: informa a faixa e conduz à microqualificação."""
+    modelos = cfg.get("modelos") or []
+
+    def _val(m):
+        d = re.sub(r"[^\d,]", "", (m.get("preco") or "").replace(".", ""))
+        return float(d.replace(",", ".")) if d else 0.0
+
+    com_preco = sorted([m for m in modelos if m.get("preco")], key=_val)
+    if not com_preco:
+        return "Deixa eu confirmar os valores atuais pra te passar certinho. Você precisa de comprovante impresso?"
+    linhas = "\n".join(f"- {m.get('nome')}: {m.get('preco')} ({m.get('parcelas') or 'em até 12x'})"
+                       for m in com_preco)
+    return (f"Hoje temos modelos a partir de {com_preco[0].get('preco')} (adesão única, sem mensalidade — "
+            f"catálogo 23/09/2026):\n{linhas}\n\n"
+            "Você precisa de comprovante impresso ou o digital já resolve? Assim eu já te indico o modelo certo.")
+
+
+def _deliver_offer(cfg: dict, from_: str, modelo: dict, slots: dict, hist: list) -> str:
+    """Envia o pacote da oferta (texto + foto/link + dúvida) e registra no histórico. Devolve o texto."""
+    texto = _ensure_pix_note(_rec_package(modelo, slots), modelo)
+    texto = _apply_model_link(texto, modelo)
+    for bubble in _split_bubbles(texto):
+        _send_reply(cfg, from_, bubble)
+    canal = cfg.get("canal") or "baileys"
+    if canal == "baileys" and modelo and not _already_offered(hist, cfg.get("modelos") or []):
+        nome = (modelo.get("nome") or "modelo").strip()
+        foto = (modelo.get("foto") or "").strip()
+        link = (modelo.get("link") or "").strip()
+        if foto:
+            caption = f"{nome} — peça pelo link: {link}" if link else nome
+            _send_media(cfg, from_, foto, caption)
+        _send_voice_or_text(cfg, from_, DOUBT_CHECK)
+    _history_append(from_, "assistant", texto)
+    _lead_event(from_, "oferta")
+    _log_event("oferta", from_, modelo.get("id") or "")
+    return texto
+
+
+def _lead_note(st: dict) -> str:
+    if not st:
+        return ""
+    return (f"\n\n# LEAD (estado comercial)\nIntenção: {st.get('intencao') or '—'} | "
+            f"Temperatura: {st.get('temperatura') or 'frio'} | Motivo: {st.get('motivo_compra') or '—'} | "
+            f"Score: {st.get('score') or 0} | Último evento: {st.get('ultimo_evento') or '—'}\n"
+            "Quente (compra/link/modelo): responda e conclua, sem enrolar. "
+            "Morno (preço/taxa/desconto): responda o dado + 1 pergunta. Frio: oriente.")
+
+
+_leads_load()
 
 
 DISCOUNT_CANONICAL = ("Pode existir desconto na adesão pelo nosso link, conforme a condição disponível "
@@ -433,7 +631,8 @@ def _price_anchor(user_last: str, last_modelo: dict) -> str:
     preco = (last_modelo.get("preco") or "").strip()
     if not preco:
         return ""
-    return f"A {last_modelo.get('nome')} é adesão única de {preco} (catálogo 23/09/2026), parcelável em até 12x, sem mensalidade."
+    parcelas = (last_modelo.get("parcelas") or "em até 12x").strip()
+    return f"A {last_modelo.get('nome')} é adesão única de {preco} (catálogo 23/09/2026), parcelável {parcelas}, sem mensalidade."
 
 
 def _strip_all_questions(texto: str) -> str:
@@ -893,13 +1092,60 @@ async def whatsapp_message(request: Request):
     hist = _history_get(from_)
     user_texts = [m["content"] for m in hist if m["role"] == "user"]
     slots = _extract_slots(user_texts)
-    system = _build_system(cfg) + _slots_note(slots)
+    
+    # Toní 3.0 - Estado comercial + intenção (antes de responder)
+    intent = _detect_intent(texto, cfg.get("modelos") or [])
+    motivo = _detect_motivo(texto)
+    lead = _lead_update(from_, intent, motivo)
+    _log_event("mensagem", from_, intent)
+    
+    system = _build_system(cfg) + _slots_note(slots) + _lead_note(lead)
     messages = [{"role": "system", "content": system}]
     messages += [{"role": m["role"], "content": m["content"]} for m in hist]
+    
+    # ===== MODO LEAD QUENTE (Toní 3.0): responder a intenção ANTES de qualificar =====
+    modelos = cfg.get("modelos") or []
+    modelo_pre = _detect_model(texto, modelos)
+
+    def _reply_simple(msg, status, evento=""):
+        try:
+            for bubble in _split_bubbles(msg):
+                _send_reply(cfg, from_, bubble)
+            _history_append(from_, "assistant", msg)
+            if evento:
+                _lead_event(from_, evento)
+                _log_event(evento, from_, "")
+            return {"ok": True, "status": status, "resposta": msg}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
+    # Perguntou preço (com ou sem modelo): responde o valor primeiro
+    if intent == "preco":
+        if modelo_pre:
+            try:
+                txt = _deliver_offer(cfg, from_, modelo_pre, slots, hist)
+                return {"ok": True, "status": "hot_preco_modelo",
+                        "modelo": modelo_pre.get("id"), "resposta": txt}
+            except Exception as e:
+                return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+        return _reply_simple(_price_overview(cfg), "hot_preco_faixa", "oferta_faixa")
+
+    # Quer comprar e já deu o essencial (modelo citado ou comprovante): entrega já
+    if intent in ("compra", "modelo"):
+        alvo = modelo_pre or (_choose_model(slots, user_texts, modelos)
+                              if (slots.get("comprovante") or "") else None)
+        if alvo:
+            try:
+                txt = _deliver_offer(cfg, from_, alvo, slots, hist)
+                return {"ok": True, "status": "hot_compra_modelo",
+                        "modelo": alvo.get("id"), "resposta": txt}
+            except Exception as e:
+                return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
 
     # Raciocínio só nos casos complexos: simples responde rápido, difícil responde certo
     complex_case = len(slots) >= 3 or len(texto) > 150 or len(hist) > 10
-    print(f"[llm] thinking={complex_case} slots={list(slots)}", flush=True)
+    print(f"[llm] thinking={complex_case} slots={list(slots)} intent={intent}", flush=True)
     try:
         llm_resp = _http_json(
             base + "/chat/completions",
@@ -908,6 +1154,8 @@ async def whatsapp_message(request: Request):
         )
     except Exception as e:
         return JSONResponse({"ok": False, "erro": "llm: " + str(e)}, status_code=502)
+
+
 
     choice = (llm_resp.get("choices") or [{}])[0] or {}
     resposta = (choice.get("message") or {}).get("content", "").strip()
