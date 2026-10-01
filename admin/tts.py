@@ -2,12 +2,23 @@
 import asyncio
 import hashlib
 import os
+import re
 import subprocess
 import tempfile
 import threading
 
 VOICE = os.environ.get("TTS_VOICE", "pt-BR-AntonioNeural")
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "tts_cache")
+
+def _strip_emoji(texto: str) -> str:
+    """Remove emojis (não devem ser 'falados' pelo TTS): astrais + ZWJ + variation selectors."""
+    out = []
+    for ch in (texto or ""):
+        o = ord(ch)
+        if o >= 0x10000 or o == 0x200D or 0xFE00 <= o <= 0xFE0F:
+            continue
+        out.append(ch)
+    return re.sub(r"\s{2,}", " ", "".join(out)).strip()
 
 
 def _synthesize_mp3(texto: str, mp3_path: str) -> None:
@@ -28,7 +39,7 @@ def _synthesize_mp3(texto: str, mp3_path: str) -> None:
 
 def tts_ogg(texto: str) -> str | None:
     """Gera (ou reaproveita do cache) o .ogg da fala. Retorna o caminho ou None."""
-    texto = (texto or "").strip()
+    texto = _strip_emoji((texto or "").strip())
     if not texto or len(texto) > 600:
         return None
     try:
