@@ -359,7 +359,6 @@ def _build_system(cfg: dict) -> str:
         "{{link_app}}": cfg.get("link_app") or "",
         "{{base_conhecimento}}": cfg.get("base_conhecimento") or "",
     }
-    sm = cfg.get("system_message") or ""
     for k, v in repl.items():
         sm = sm.replace(k, v)
     sm = sm.replace("{{modelos}}", json.dumps(cfg.get("modelos") or [], ensure_ascii=False))
