@@ -458,21 +458,6 @@ def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "") -> Non
     )
 
 
-POLL_VALUES = ["Pix 0%", "Sem mensalidade", "Garantia vitalícia", "Receba na hora"]
-
-
-def _send_poll(cfg: dict, from_: str, name: str, values: list, selectable: int) -> None:
-    evo = cfg.get("evolution") or {}
-    api_url = evo.get("api_url") or "http://localhost:8080"
-    api_key = evo.get("api_key") or ""
-    instance = evo.get("instance") or "toni"
-    _http_json(
-        f"{api_url}/message/sendPoll/{instance}",
-        {"apikey": api_key},
-        {"number": from_, "name": name, "selectableCount": selectable, "values": values},
-    )
-
-
 def _already_offered(hist: list, modelos: list) -> bool:
     """True se alguma resposta anterior já continha link de modelo (oferta já feita)."""
     links = [m.get("link") or "" for m in (modelos or []) if m.get("link")]
@@ -690,7 +675,6 @@ async def whatsapp_message(request: Request):
             if foto:
                 caption = f"{nome} — peça pelo link: {link}" if link else nome
                 _send_media(cfg, from_, foto, caption)
-            _send_poll(cfg, from_, f"O que mais te interessou na {nome}?", POLL_VALUES, len(POLL_VALUES))
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
         return {"ok": True, "status": "sent", "modelo": (modelo or {}).get("id"), "resposta": texto}
