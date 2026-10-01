@@ -4,6 +4,7 @@ import hashlib
 import os
 import subprocess
 import tempfile
+import threading
 
 VOICE = os.environ.get("TTS_VOICE", "pt-BR-AntonioNeural")
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "tts_cache")
@@ -11,7 +12,18 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config", "
 
 def _synthesize_mp3(texto: str, mp3_path: str) -> None:
     import edge_tts
-    asyncio.run(edge_tts.Communicate(texto, VOICE).save(mp3_path))
+
+    def _run() -> None:
+        asyncio.run(edge_tts.Communicate(texto, VOICE).save(mp3_path))
+
+    try:
+        asyncio.get_running_loop()
+        # Há um event loop ativo (handler async do FastAPI): roda a síntese em thread própria.
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout=90)
+    except RuntimeError:
+        _run()
 
 
 def tts_ogg(texto: str) -> str | None:
