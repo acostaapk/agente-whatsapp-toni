@@ -1119,6 +1119,14 @@ async def whatsapp_message(request: Request):
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
+    # Cold-open (1ª mensagem): se já é uma objeção comercial, responde direto, sem auto-apresentação
+    if len(user_texts) == 1 and intent == "trocar":
+        return _reply_simple(
+            "Entendi! Já que você tem uma maquininha, me conta: o que te faz pensar em trocar? "
+            "(taxa, mobilidade, comprovante ou uma segunda máquina) Assim eu já te indico o melhor caminho. 🙂",
+            "objecao_trocar",
+        )
+
     # Perguntou preço (com ou sem modelo): responde o valor primeiro
     if intent == "preco":
         if modelo_pre:
@@ -1166,7 +1174,8 @@ async def whatsapp_message(request: Request):
     resposta = _strip_markdown(resposta)
     resposta = _soften_superlative(resposta)
     is_fresh = len([m for m in hist if m["role"] == "user"]) <= 1
-    resposta = _strip_reintro(resposta, is_fresh)
+    cold_commercial = is_fresh and intent not in ("info", "")
+    resposta = _strip_reintro(resposta, not cold_commercial)
     resposta = _strip_repeated_questions(resposta, slots)
     resposta = _strip_cadastro_question(resposta, slots)
     resposta = _keep_first_question(resposta)
