@@ -106,6 +106,14 @@ CANNED_EXIT = ("Tranquilo, entendo! Só reforço que a Ton tem Pix 0% com chave 
 
 DOUBT_CHECK = "Você tem alguma dúvida até aqui? 🙂"
 
+# "não" após a pergunta de dúvida = sem dúvidas (sinal POSITIVO), não é desinteresse.
+NO_DOUBTS_PAT = (r"^(n[ãa]o|nao)[.,!]*$"
+                 r"|^(n[ãa]o|nao)[, ]+(tudo (certo|bem|ok)|nenhuma|nada|sem d[úu]vida)"
+                 r"|^nenhuma[.,!]*$"
+                 r"|^sem d[úu]vida"
+                 r"|^tudo (certo|bem|ok)[.,!]*$")
+NO_DOUBTS_REPLY = "Perfeito! Se aparecer qualquer dúvida, é só me chamar. Tô por aqui. 🙂"
+
 
 def _is_greeting(texto: str) -> bool:
     return _norm(texto).strip("!., ") in GREETING_EXACT
@@ -1081,6 +1089,18 @@ async def whatsapp_message(request: Request):
         try:
             _send_voice_or_text(cfg, from_, CANNED_EXIT)
             return {"ok": True, "status": "no_interest"}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
+    # "não" após uma oferta = sem dúvidas (positivo): encerra sem presumir desinteresse
+    if (re.search(NO_DOUBTS_PAT, (texto or "").strip(), re.IGNORECASE)
+            and _already_offered(_history_get(from_), cfg.get("modelos") or [])):
+        _history_append(from_, "user", texto)
+        _history_append(from_, "assistant", NO_DOUBTS_REPLY)
+        print(f"[no-doubts] encerramento positivo para {from_}", flush=True)
+        try:
+            _send_voice_or_text(cfg, from_, NO_DOUBTS_REPLY)
+            return {"ok": True, "status": "no_doubts"}
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
