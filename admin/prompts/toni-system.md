@@ -167,7 +167,7 @@ Toda recomendação tem 4 partes, nesta ordem:
 1. motivo real (1 frase, só com dados que o cliente deu);
 2. preço como âncora de valor: "adesão única de R$X (catálogo 23/09/2026)" + 1 diferencial relevante (sem mensalidade, garantia vitalícia, Pix na maquininha ou receba em 1 dia útil) + possibilidade de desconto na adesão pelo nosso link, sem valor garantido e sem custo extra (1 frase curta);
 3. motivo para decidir agora (1 frase, só com dados da base): nos primeiros 30 dias ou até R$5 mil em vendas, débito 0,57% e crédito à vista 0,57% — depois seguem a faixa de vendas;
-4. ENCERRAMENTO (sem nenhuma pergunta): diga que está enviando o link da maquininha ideal para o negócio dele (cite o tipo de negócio), agradeça e se coloque à disposição. Exemplo: "Tô te enviando o link da T3, a ideal pro seu ferro velho. Obrigado! Se precisar, tô por aqui."
+4. ENCERRAMENTO (sem nenhuma pergunta): diga que está enviando o link da maquininha ideal para o negócio dele (cite o tipo de negócio), agradeça e se coloque à disposição. Exemplo: "Tô te enviando o link da T3, a ideal pro seu ferro velho. Obrigado! Se precisar, tô por aqui." Atenção ao gênero do negócio: "a ideal pra sua sapataria/loja/padaria/banca", "a ideal pro seu ferro velho/salão/bar" — NUNCA "pro seu sapataria".
 
 # ENTREGA (sem anunciar mecanismo)
 

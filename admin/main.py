@@ -204,9 +204,15 @@ def _apply_app_link(texto: str, cfg: dict) -> str:
 
 
 def _split_bubbles(texto: str) -> list:
-    """Divide a resposta em bolhas (1 parágrafo = 1 mensagem)."""
+    """Divide a resposta em bolhas (1 parágrafo = 1 mensagem). Bolha só-emoji gruda na anterior."""
     parts = [p.strip() for p in re.split(r"\n{2,}", texto) if p.strip()]
-    return parts or [texto]
+    merged = []
+    for p in parts:
+        if merged and not re.search(r"[A-Za-z0-9]", p) and len(p) <= 8:
+            merged[-1] = merged[-1] + " " + p
+        else:
+            merged.append(p)
+    return merged or [texto]
 
 
 def _soften_superlative(texto: str) -> str:
@@ -243,10 +249,22 @@ def _fallback_question(slots: dict) -> str:
     return "Anotado! Se precisar de mais alguma informação, tô por aqui."
 
 
+MASC_A = ("lava", "mapa", "sofá", "sofa")
+FEM_E = ("lanchonete",)
+
+
+def _artigo_negocio(neg: str) -> str:
+    """'pra sua sapataria' / 'pro seu ferro velho' — nunca 'pro seu sapataria'."""
+    first = (neg or "").strip().split(" ")[0].lower()
+    if first in FEM_E or (first.endswith("a") and first not in MASC_A):
+        return f"pra sua {neg}"
+    return f"pro seu {neg}"
+
+
 def _recommendation_fallback(modelo: dict, slots: dict) -> str:
     nome = ((modelo or {}).get("nome") or "modelo").strip()
     neg = str(slots.get("negocio") or "").strip()
-    alvo = f", a ideal pro seu {neg}" if neg else ", a ideal pra você"
+    alvo = f", a ideal {_artigo_negocio(neg)}" if neg else ", a ideal pra você"
     return f"Tô te enviando o link da {nome}{alvo}. Obrigado! Se precisar, tô por aqui."
 
 
@@ -634,7 +652,6 @@ async def whatsapp_message(request: Request):
             resposta = _recommendation_fallback(modelo_pre, slots)
     if not resposta:
         resposta = _fallback_question(slots)
-    _history_append(from_, "assistant", resposta)
 
     try:
         canal = cfg.get("canal") or "baileys"
@@ -677,8 +694,10 @@ async def whatsapp_message(request: Request):
                 _send_media(cfg, from_, foto, caption)
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
+        _history_append(from_, "assistant", texto)
         return {"ok": True, "status": "sent", "modelo": (modelo or {}).get("id"), "resposta": texto}
     except Exception as e:
+        _history_append(from_, "assistant", resposta)
         return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
 
