@@ -549,6 +549,20 @@ def _extract_audio_url(body) -> str:
     return ""
 
 
+def _extract_audio_b64(body) -> str:
+    """Áudio já decifrado (base64 do Evolution) ou ''."""
+    try:
+        if body.get("event") == "messages.upsert":
+            data = body.get("data") or {}
+            msg = data.get("message") or {}
+            b64 = msg.get("base64") or ""
+            if b64 and len(b64) > 1000:
+                return b64
+    except Exception:
+        pass
+    return ""
+
+
 def _already_offered(hist: list, modelos: list) -> bool:
     """True se alguma resposta anterior já continha link de modelo (oferta já feita)."""
     links = [m.get("link") or "" for m in (modelos or []) if m.get("link")]
@@ -644,16 +658,28 @@ async def whatsapp_message(request: Request):
     from_, texto = _extract_message(body)
     print(f"[webhook] from={from_} texto={texto!r}", flush=True)
     audio_url = _extract_audio_url(body) if (from_ and not texto) else ""
-    if audio_url:
+    audio_b64 = _extract_audio_b64(body) if (from_ and not texto) else ""
+    if from_ and not texto and not audio_url and not audio_b64:
         try:
-            from stt import transcribe_audio_url
-            texto = transcribe_audio_url(audio_url)
+            dbg = ((body.get("data") or {}).get("message") or {})
+            print(f"[stt-debug] msg keys={list(dbg.keys())}", flush=True)
+        except Exception:
+            pass
+    if audio_b64 or audio_url:
+        try:
+            import base64
+            from stt import transcribe_audio_url, transcribe_bytes
+            if audio_b64:
+                print(f"[stt] via base64 ({len(audio_b64)} chars)", flush=True)
+                texto = transcribe_bytes(base64.b64decode(audio_b64))
+            else:
+                texto = transcribe_audio_url(audio_url)
             print(f"[stt] transcrito: {texto!r}", flush=True)
         except Exception as e:
             print(f"[stt] indisponível: {e}", flush=True)
             texto = ""
     if not from_ or not texto:
-        if audio_url:
+        if audio_b64 or audio_url:
             try:
                 _send_reply(_load(), from_, "Não consegui ouvir seu áudio, pode escrever pra mim? 🙂")
             except Exception as e:

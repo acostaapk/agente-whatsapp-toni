@@ -37,12 +37,9 @@ def _get_model():
     return _MODEL
 
 
-def transcribe_audio_url(url: str) -> str:
-    """Baixa o áudio e transcreve. Retorna '' se falhar."""
+def transcribe_bytes(data: bytes) -> str:
+    """Transcreve bytes de áudio (já decifrados). Retorna '' se falhar."""
     try:
-        req = urllib.request.Request(url or "", headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = resp.read()
         if not data or len(data) > MAX_BYTES:
             return ""
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as f:
@@ -54,5 +51,18 @@ def transcribe_audio_url(url: str) -> str:
         finally:
             os.unlink(path)
     except Exception as e:
-        print(f"[stt] falhou: {e}", flush=True)
+        print(f"[stt] falhou: {e} (bytes={len(data) if data else 0})", flush=True)
+        return ""
+
+
+def transcribe_audio_url(url: str) -> str:
+    """Baixa o áudio e transcreve. Retorna '' se falhar."""
+    try:
+        req = urllib.request.Request(url or "", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = resp.read()
+        print(f"[stt] baixados {len(data)} bytes de url", flush=True)
+        return transcribe_bytes(data)
+    except Exception as e:
+        print(f"[stt] download falhou: {e}", flush=True)
         return ""
