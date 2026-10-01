@@ -97,6 +97,14 @@ CRIME_PAT = r"tr[áa]fico|traficante|lavar dinheiro|lavagem de dinheiro|branquea
 
 CANNED_REFUSAL = "Não consigo ajudar com isso. Vou te encaminhar pra nossa equipe."
 
+NO_INTEREST_PAT = r"n[ãa]o tenho interesse|sem interesse|j[áa] tenho maquininha|j[áa] tenho m[áa]quina|deixa pra l[áa]|deixa quieto|dispenso|n[ãa]o,?\s*obrigad"
+INTEREST_ESCAPE_PAT = r"\bmas\b|\?|taxa|quanto|vale a pena|compar|quero saber|me conta|me fala"
+
+CANNED_EXIT = ("Tranquilo, entendo! Só reforço que a Ton tem Pix 0% com chave cadastrada e sem mensalidade "
+               "— se mudar de ideia, tô por aqui. Obrigado pela atenção! 🙂")
+
+DOUBT_CHECK = "Você tem alguma dúvida até aqui? 🙂"
+
 
 def _is_greeting(texto: str) -> bool:
     return _norm(texto).strip("!., ") in GREETING_EXACT
@@ -192,6 +200,12 @@ def _extract_slots(user_texts: list) -> dict:
                 slots["mobilidade"] = "celular por perto"
             elif re.search(r"sozinha|sem (o )?celular|sem depender|mobilidade|independente", low):
                 slots["mobilidade"] = "funciona sozinha"
+        if "nome" not in slots:
+            m = (re.search(r"me chamo\s+([A-ZÀ-Ú][a-zà-ú]+)", t or "")
+                 or re.search(r"meu nome [ée]\s+([A-ZÀ-Ú][a-zà-ú]+)", t or "")
+                 or re.search(r"\bsou\s+[oa]\s+([A-ZÀ-Ú][a-zà-ú]+)", t or ""))
+            if m and m.group(1).lower() not in ("toni", "ton"):
+                slots["nome"] = m.group(1).strip()
     return slots
 
 
@@ -286,8 +300,10 @@ def _artigo_negocio(neg: str) -> str:
 def _recommendation_fallback(modelo: dict, slots: dict) -> str:
     nome = ((modelo or {}).get("nome") or "modelo").strip()
     neg = str(slots.get("negocio") or "").strip()
+    who = str(slots.get("nome") or "").strip()
     alvo = f", a ideal {_artigo_negocio(neg)}" if neg else ", a ideal pra você"
-    return f"Tô te enviando o link da {nome}{alvo}. Obrigado! Se precisar, tô por aqui."
+    thanks = f"Obrigado, {who}!" if who else "Obrigado!"
+    return f"Tô te enviando o link da {nome}{alvo}. {thanks} Se precisar, tô por aqui."
 
 
 PIX_STANDARD = "Pix 0% com chave cadastrada na Conta Ton (30 dias grátis pra novos clientes; sem chave, 0,49% por venda)."
@@ -630,6 +646,17 @@ async def whatsapp_message(request: Request):
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
+    if (re.search(NO_INTEREST_PAT, texto or "", re.IGNORECASE)
+            and not re.search(INTEREST_ESCAPE_PAT, texto or "", re.IGNORECASE)):
+        _history_append(from_, "user", texto)
+        _history_append(from_, "assistant", CANNED_EXIT)
+        print(f"[no-interest] saída elegante para {from_}", flush=True)
+        try:
+            _send_reply(cfg, from_, CANNED_EXIT)
+            return {"ok": True, "status": "no_interest"}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
     base = llm.get("base_url") or "http://127.0.0.1:8888/v1"
     model = llm.get("model") or "Qwen/Qwen2.5-14B-Instruct-GGUF"
     llm_key = llm.get("api_key") or ""
@@ -714,6 +741,7 @@ async def whatsapp_message(request: Request):
             if foto:
                 caption = f"{nome} — peça pelo link: {link}" if link else nome
                 _send_media(cfg, from_, foto, caption)
+            _send_reply(cfg, from_, DOUBT_CHECK)
 
         print(f"[reply] to={from_} modelo={(modelo or {}).get('id')} texto={texto!r}", flush=True)
         _history_append(from_, "assistant", texto)
