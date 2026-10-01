@@ -61,7 +61,7 @@ def transcribe_audio_url(url: str) -> str:
         req = urllib.request.Request(url or "", headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = resp.read()
-        print(f"[stt] baixados {len(data)} bytes de url", flush=True)
+        print(f"[stt] baixados {len(data)} bytes de url; magic={data[:12].hex()}", flush=True)
         return transcribe_bytes(data)
     except Exception as e:
         print(f"[stt] download falhou: {e}", flush=True)

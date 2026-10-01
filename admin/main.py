@@ -551,6 +551,9 @@ def _extract_audio_url(body) -> str:
             data = body.get("data") or {}
             msg = data.get("message") or {}
             audio = msg.get("audioMessage") or msg.get("pttMessage") or {}
+            if audio:
+                print(f"[stt-debug] audio keys={list(audio.keys())} "
+                      f"fileLength={audio.get('fileLength')} mimetype={audio.get('mimetype')}", flush=True)
             return audio.get("url") or ""
     except Exception:
         pass
