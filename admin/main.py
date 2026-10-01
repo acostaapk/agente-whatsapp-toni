@@ -250,6 +250,29 @@ def _recommendation_fallback(modelo: dict, slots: dict) -> str:
     return f"Tô te enviando o link da {nome}{alvo}. Obrigado! Se precisar, tô por aqui."
 
 
+PIX_STANDARD = "Pix 0% com chave cadastrada na Conta Ton (30 dias grátis pra novos clientes; sem chave, 0,49% por venda)."
+PIX_T1_NONE = "A T1 não tem Pix na maquininha."
+
+
+def _ensure_pix_note(texto: str, modelo: dict) -> str:
+    """Garante a frase de Pix: T1 nega; demais modelos afirmam com condições."""
+    if not modelo:
+        return texto
+    mid = (modelo.get("id") or "").strip()
+    low = texto.lower()
+    if mid == "t1":
+        if re.search(r"n[ãa]o tem pix|sem pix", low):
+            return texto
+        kept = [s for s in _split_sentences(texto) if "pix" not in s.lower()]
+        texto = " ".join(kept).strip()
+        if PIX_T1_NONE.lower() not in texto.lower():
+            texto = texto.rstrip() + "\n\n" + PIX_T1_NONE
+        return texto
+    if "pix" not in low:
+        texto = texto.rstrip() + "\n\n" + PIX_STANDARD
+    return texto
+
+
 OBJECTION_PAT = r"t[áa] caro|muito caro|tem desconto|é caro|quanto custa|\bpre[çc]o\b|\bvalor\b"
 
 
@@ -613,6 +636,7 @@ async def whatsapp_message(request: Request):
 
         if modelo:
             texto = _apply_model_link(texto, modelo)
+            texto = _ensure_pix_note(texto, modelo)
             low = texto.lower()
             if not any(w in low for w in ("obrigado", "valeu", "por aqui", "disposi", "precisando")):
                 texto = texto.rstrip() + "\n\n" + _recommendation_fallback(modelo, slots)
