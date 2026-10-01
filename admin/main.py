@@ -574,6 +574,48 @@ def _extract_audio_b64(body) -> str:
     return ""
 
 
+def _extract_msg_id(body) -> str:
+    try:
+        if body.get("event") == "messages.upsert":
+            return ((body.get("data") or {}).get("key") or {}).get("id") or ""
+    except Exception:
+        pass
+    return ""
+
+
+def _fetch_media_b64(cfg: dict, msg_id: str):
+    """Pede ao Evolution o base64 decifrado da mídia (getBase64FromMediaMessage)."""
+    evo = cfg.get("evolution") or {}
+    api_url = evo.get("api_url") or "http://localhost:8080"
+    api_key = evo.get("api_key") or ""
+    instance = evo.get("instance") or "toni"
+    r = _http_json(
+        f"{api_url}/chat/getBase64FromMediaMessage/{instance}",
+        {"apikey": api_key},
+        {"message": {"key": {"id": msg_id}}, "convertToMp4": False},
+    )
+
+    def hunt(o):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k.lower() in ("base64", "data", "media") and isinstance(v, str) and len(v) > 1000:
+                    return v
+                h = hunt(v)
+                if h:
+                    return h
+        elif isinstance(o, list):
+            for v in o:
+                h = hunt(v)
+                if h:
+                    return h
+        return None
+
+    b64 = hunt(r) or ""
+    if "," in b64 and len(b64) > 1100:
+        b64 = b64.split(",", 1)[1]
+    return b64
+
+
 def _already_offered(hist: list, modelos: list) -> bool:
     """True se alguma resposta anterior já continha link de modelo (oferta já feita)."""
     links = [m.get("link") or "" for m in (modelos or []) if m.get("link")]
@@ -670,6 +712,13 @@ async def whatsapp_message(request: Request):
     print(f"[webhook] from={from_} texto={texto!r}", flush=True)
     audio_url = _extract_audio_url(body) if (from_ and not texto) else ""
     audio_b64 = _extract_audio_b64(body) if (from_ and not texto) else ""
+    msg_id = _extract_msg_id(body) if (from_ and not texto) else ""
+    if (audio_url or msg_id) and not audio_b64 and msg_id:
+        try:
+            audio_b64 = _fetch_media_b64(_load(), msg_id)
+            print(f"[stt] getBase64: {'ok' if audio_b64 else 'vazio'} ({len(audio_b64)} chars)", flush=True)
+        except Exception as e:
+            print(f"[stt] getBase64 falhou: {e}", flush=True)
     if from_ and not texto and not audio_url and not audio_b64:
         try:
             dbg = ((body.get("data") or {}).get("message") or {})
