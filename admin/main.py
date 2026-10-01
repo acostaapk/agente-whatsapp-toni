@@ -118,6 +118,26 @@ def _is_forget(texto: str) -> bool:
 _history_load()
 
 
+DISCOUNT_CANONICAL = ("Pode existir desconto na adesão pelo nosso link, conforme a condição disponível "
+                      "no momento. Não é um valor garantido e não há custo extra para você.")
+
+
+def _ensure_discount_phrase(texto: str) -> str:
+    """Troca qualquer frase de desconto fora do padrão pela frase canônica."""
+    if "descont" not in texto.lower() or "pode existir desconto" in texto.lower():
+        return texto
+    sents = _split_sentences(texto)
+    out = []
+    swapped = False
+    for s in sents:
+        if not swapped and "descont" in s.lower():
+            out.append(DISCOUNT_CANONICAL)
+            swapped = True
+        else:
+            out.append(s)
+    return " ".join(out).strip()
+
+
 def _strip_markdown(texto: str) -> str:
     texto = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", texto)  # remove imagens markdown (![]())
     texto = re.sub(r"\[([^\]]*)\]\((https?://[^)]+)\)", r"\1 \2", texto)  # [texto](url) -> texto url
@@ -125,6 +145,8 @@ def _strip_markdown(texto: str) -> str:
     texto = re.sub(r"Quer que eu te mostre como fica a taxa[^\n?]*\?", "", texto, flags=re.IGNORECASE)  # pergunta banida
     texto = re.sub(r"Quer que eu te [^\n?]*\?", "", texto, flags=re.IGNORECASE)  # "quer que eu te...?" nunca
     texto = re.sub(r",?\s*(e )?o prazo varia conforme a regi[ãa]o[.?!]?", ".", texto, flags=re.IGNORECASE)  # prazo inventado
+    texto = re.sub(r"\s*(e |, )?(é (bem |super |muito )?[^.?!]{0,60}?)?pra quem [^.?!]*(crescendo|crescer|vendendo mais|vender mais|faturando|faturar mais|expandindo|expandir|escalando|escalar)[^.?!]*[.?!]?", "", texto, flags=re.IGNORECASE)  # necessidade presumida
+    texto = _ensure_discount_phrase(texto)
     texto = re.sub(r"\*\*(.+?)\*\*", r"\1", texto)  # **negrito** -> texto (WhatsApp usa *simples*)
     texto = re.sub(r"__(.+?)__", r"\1", texto)
     texto = re.sub(r"\n{3,}", "\n\n", texto)
