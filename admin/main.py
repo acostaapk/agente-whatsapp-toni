@@ -93,6 +93,10 @@ GREETING_EXACT = ("oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "opa
 CANNED_GREETING = ("Oi! Sou o Toni, parceiro Ton. Tenho 4 opções de maquininhas e posso te ajudar "
                    "a escolher o modelo que faz mais sentido pra você. Que tipo de negócio você tem?")
 
+CRIME_PAT = r"tr[áa]fico|traficante|lavar dinheiro|lavagem de dinheiro|branqueamento|recepta|estelionato|fraude|contrabando|armas?\b"
+
+CANNED_REFUSAL = "Não consigo ajudar com isso. Vou te encaminhar pra nossa equipe."
+
 
 def _is_greeting(texto: str) -> bool:
     return _norm(texto).strip("!., ") in GREETING_EXACT
@@ -540,6 +544,16 @@ async def whatsapp_message(request: Request):
         try:
             _send_reply(cfg, from_, CANNED_GREETING)
             return {"ok": True, "status": "greeted"}
+        except Exception as e:
+            return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
+
+    if re.search(CRIME_PAT, texto or "", re.IGNORECASE):
+        _history_append(from_, "user", texto)
+        _history_append(from_, "assistant", CANNED_REFUSAL)
+        print(f"[crime] recusa + escalada para {from_}", flush=True)
+        try:
+            _send_reply(cfg, from_, CANNED_REFUSAL)
+            return {"ok": True, "status": "refused_crime"}
         except Exception as e:
             return JSONResponse({"ok": False, "erro": "send: " + str(e)}, status_code=502)
 
