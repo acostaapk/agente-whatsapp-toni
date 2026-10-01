@@ -1188,7 +1188,10 @@ async def whatsapp_message(request: Request):
             if url and url in texto:
                 texto = texto.replace(url, "").strip()
 
-        if modelo:
+        # Toní 3.0 (regra 8): pós-venda/suporte/reclamação NÃO executa fluxo de vendas
+        # (sem link de compra, sem Pix, sem fechamento de recomendação).
+        nao_vende = intent in ("posvenda", "suporte", "reclamacao")
+        if modelo and not nao_vende:
             texto = _apply_model_link(texto, modelo)
             texto = _ensure_pix_note(texto, modelo)
             low = texto.lower()
@@ -1210,7 +1213,7 @@ async def whatsapp_message(request: Request):
 
         for bubble in _split_bubbles(texto):
             _send_reply(cfg, from_, bubble)
-        if canal == "baileys" and modelo and not _already_offered(hist, cfg.get("modelos") or []):
+        if canal == "baileys" and modelo and not nao_vende and not _already_offered(hist, cfg.get("modelos") or []):
             nome = ((modelo.get("nome") or "modelo").strip())
             foto = (modelo.get("foto") or "").strip()
             link = (modelo.get("link") or "").strip()
