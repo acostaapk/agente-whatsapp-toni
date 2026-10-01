@@ -516,9 +516,17 @@ def _send_media(cfg: dict, from_: str, media_url: str, caption: str = "", mediat
 
 def _send_voice(cfg: dict, from_: str, ogg_path: str) -> None:
     import base64
+    evo = cfg.get("evolution") or {}
+    api_url = evo.get("api_url") or "http://localhost:8080"
+    api_key = evo.get("api_key") or ""
+    instance = evo.get("instance") or "toni"
     with open(ogg_path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode()
-    _send_media(cfg, from_, b64, "", "audio")
+    _http_json(
+        f"{api_url}/message/sendWhatsAppAudio/{instance}",
+        {"apikey": api_key},
+        {"number": from_, "audio": b64},
+    )
 
 
 def _send_voice_or_text(cfg: dict, from_: str, texto: str) -> None:
