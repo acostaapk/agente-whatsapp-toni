@@ -236,10 +236,8 @@ def _fallback_question(slots: dict) -> str:
     if "negocio" not in slots:
         return "Que tipo de negócio você tem?"
     neg = str(slots["negocio"]).capitalize()
-    if "mobilidade" not in slots:
-        return f"{neg}, anotado! Você vende com o celular por perto ou precisa de uma maquininha que funcione sozinha?"
     if "comprovante" not in slots:
-        return "Seu cliente precisa de comprovante impresso ou o digital já resolve?"
+        return f"{neg}, anotado! Seu cliente precisa de comprovante impresso ou o digital já resolve?"
     if "volume" not in slots:
         return "Qual é a sua faixa de vendas por mês?"
     return "Anotado! Se precisar de mais alguma informação, tô por aqui."
