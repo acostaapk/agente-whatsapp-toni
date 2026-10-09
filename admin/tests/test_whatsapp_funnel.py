@@ -3551,15 +3551,15 @@ class WhatsAppDryRunTests(unittest.TestCase):
         self.assertEqual(dry_run.replies, [])
         self.assertEqual(dry_run.buttons, [])
 
-    def test_eighty_data_driven_funnel_conversations(self):
+    def test_data_driven_funnel_conversations(self):
         from admin.tests.whatsapp_test_harness import _load_main
         from admin.followup_policy import purchase_check_due
 
         fixture_path = Path(__file__).resolve().parent / "fixtures" / "funnel_cases.json"
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
         scenarios = fixture["cases"]
-        self.assertEqual(len(scenarios), 80, "Task 7 fixture must contain exactly 80 scenarios")
-        self.assertEqual(len({scenario["id"] for scenario in scenarios}), 80)
+        self.assertEqual(len(scenarios), 120, "fixture must contain exactly 120 scenarios")
+        self.assertEqual(len({scenario["id"] for scenario in scenarios}), 120)
 
         configured_urls = {
             f"https://checkout.example.invalid/{plan}/{model}"

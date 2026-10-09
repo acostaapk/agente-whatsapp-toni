@@ -307,7 +307,7 @@ NO_DOUBTS_PAT = (r"^(n[ãa]o|nao)[.,!]*$"
 NO_DOUBTS_REPLY = "Perfeito! Se aparecer qualquer dúvida, é só me chamar. Tô por aqui. 🙂"
 
 # Encerramento suave: sem pressa, sem link, sem oferta — só registra e se despede.
-SOFT_EXIT_PAT = (r"nada por enquanto|s[óo] (olhando|pesquisando|vendo)|agora n[ãa]o|outra hora"
+SOFT_EXIT_PAT = (r"nada por enquanto|s[óo]( estou)? (olhando|pesquisando|vendo)|agora n[ãa]o|outra hora"
                  r"|depois (eu |a gente )(fala|conversa|ve)|mais tarde|vou pensar|t[ôo] pensando"
                  r"|deixa (pra|para) depois|por enquanto (n[ãa]o|é só)|só curiosidade|apenas curiosidade")
 SOFT_EXIT_REPLY = ("Tranquilo, sem pressa! 🙂 Vou deixar tudo registrado aqui. "
@@ -467,7 +467,7 @@ def _needs_purchase_followup(phone: str) -> bool:
 BLOCKED_PATH = BASE / "config" / "blocked.json"
 BLOCKED: set = set()
 BLOCKED_LOCK = threading.Lock()
-OPT_OUT_PAT = (r"\bpare\b|para (de )?(me )?(mandar|enviar) mensagem|n[ãa]o quero (mais |receber|mensagem)|"
+OPT_OUT_PAT = (r"\bparem?\b|para (de )?(me )?(mandar|enviar) mensagem|n[ãa]o quero (mais |receber|mensagem)|"
                r"me tira(r)?( da lista| dessa lista)?|me remove|descadastr|remov.*(lista|contato)|"
                r"chega de mensagem|n[ãa]o (me )?(chama|chame|procura|mande|envie) mais|\bstop\b|cancele.*(mensagem|contato)")
 OPT_OUT_REPLY = ("Entendido, sem problema! 🙂 Removi seu contato da nossa lista e você não vai "
