@@ -3558,8 +3558,8 @@ class WhatsAppDryRunTests(unittest.TestCase):
         fixture_path = Path(__file__).resolve().parent / "fixtures" / "funnel_cases.json"
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
         scenarios = fixture["cases"]
-        self.assertEqual(len(scenarios), 120, "fixture must contain exactly 120 scenarios")
-        self.assertEqual(len({scenario["id"] for scenario in scenarios}), 120)
+        self.assertEqual(len(scenarios), 220, "fixture must contain exactly 220 scenarios")
+        self.assertEqual(len({scenario["id"] for scenario in scenarios}), 220)
 
         configured_urls = {
             f"https://checkout.example.invalid/{plan}/{model}"

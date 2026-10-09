@@ -467,9 +467,9 @@ def _needs_purchase_followup(phone: str) -> bool:
 BLOCKED_PATH = BASE / "config" / "blocked.json"
 BLOCKED: set = set()
 BLOCKED_LOCK = threading.Lock()
-OPT_OUT_PAT = (r"\bparem?\b|para (de )?(me )?(mandar|enviar) mensagem|n[ãa]o quero (mais |receber|mensagem)|"
+OPT_OUT_PAT = (r"\bparem?\b|para (de )?(me )?(mandar|enviar) (mensagem|mensagens)|n[ãa]o quero (mais |receber|(mensagem|mensagens))|"
                r"me tira(r)?( da lista| dessa lista)?|me remove|descadastr|remov.*(lista|contato)|"
-               r"chega de mensagem|n[ãa]o (me )?(chama|chame|procura|mande|envie) mais|\bstop\b|cancele.*(mensagem|contato)")
+               r"chega de (mensagem|mensagens)|n[ãa]o (me )?(chama|chame|procura|mande|envie) mais|\bstop\b|cancele.*((mensagem|mensagens)|contato)")
 OPT_OUT_REPLY = ("Entendido, sem problema! 🙂 Removi seu contato da nossa lista e você não vai "
                  "receber mais mensagens. Se precisar um dia, é só me chamar.")
 
