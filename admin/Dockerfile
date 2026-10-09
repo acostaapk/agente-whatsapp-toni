@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -r
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8')"
-COPY main.py followup_policy.py sales_policy.py stt.py tts.py .
+COPY main.py dedupe.py followup_policy.py sales_policy.py stt.py tts.py .
 COPY static/ static/
 COPY prompts/ prompts/
 EXPOSE 8090
