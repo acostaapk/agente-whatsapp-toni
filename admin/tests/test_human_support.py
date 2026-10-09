@@ -411,6 +411,7 @@ class HumanSupportLibraryTests(unittest.TestCase):
             "tools-drawer-toggle",
             "conversations-drawer-toggle",
             "sound-toggle",
+            "bot-toggle",
         ):
             with self.subTest(element_id=element_id):
                 self.assertIn(f'id="{element_id}"', page)
@@ -424,6 +425,171 @@ class HumanSupportLibraryTests(unittest.TestCase):
         self.assertIn('data-tab="templates"', page)
         self.assertIn('data-tab="perfil"', page)
         self.assertIn('data-tab="numeros"', page)
+
+
+class BotToggleTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._previous_sys_path = list(sys.path)
+        from admin.tests import whatsapp_test_harness
+
+        cls._harness = whatsapp_test_harness
+        cls._previous_harness_state = (
+            whatsapp_test_harness._LOADED_MAIN,
+            whatsapp_test_harness._BOOTSTRAP_TEMP,
+            whatsapp_test_harness._BOOTSTRAP_DB,
+        )
+        cls._previous_main_module = sys.modules.get("admin.main")
+
+    @classmethod
+    def tearDownClass(cls):
+        loaded_main, bootstrap_temp, bootstrap_db = cls._previous_harness_state
+        current_temp = cls._harness._BOOTSTRAP_TEMP
+        if current_temp is not None and current_temp is not bootstrap_temp:
+            current_temp.cleanup()
+        cls._harness._LOADED_MAIN = loaded_main
+        cls._harness._BOOTSTRAP_TEMP = bootstrap_temp
+        cls._harness._BOOTSTRAP_DB = bootstrap_db
+        if cls._previous_main_module is None:
+            sys.modules.pop("admin.main", None)
+        else:
+            sys.modules["admin.main"] = cls._previous_main_module
+        sys.path[:] = cls._previous_sys_path
+
+    def setUp(self):
+        self.main = _load_main()
+        self.temp_dir = TemporaryDirectory(prefix="bot-toggle-")
+        self.addCleanup(self.temp_dir.cleanup)
+        self.state_path = Path(self.temp_dir.name) / "bot-state.json"
+        self.history_path = Path(self.temp_dir.name) / "history.json"
+        self.ledger_path = Path(self.temp_dir.name) / "messages.jsonl"
+        for name, path in (
+            ("BOT_STATE_PATH", self.state_path),
+            ("HISTORY_PATH", self.history_path),
+            ("LEDGER_PATH", self.ledger_path),
+        ):
+            patcher = patch.object(self.main, name, path, create=True)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        user_patcher = patch.object(self.main, "_current_user", return_value={"id": 1})
+        user_patcher.start()
+        self.addCleanup(user_patcher.stop)
+
+    @staticmethod
+    def _status_code(response):
+        return getattr(response, "status_code", 200)
+
+    @staticmethod
+    def _json_response(response):
+        if isinstance(response, dict):
+            return response
+        return json.loads(response.body.decode("utf-8"))
+
+    def _get_status(self):
+        return self.main.get_bot_status(FakeRequest({}))
+
+    def _set_status(self, enabled):
+        return asyncio.run(self.main.set_bot_status(FakeRequest({"enabled": enabled})))
+
+    def test_status_defaults_to_enabled(self):
+        self.assertEqual(self._json_response(self._get_status()), {"enabled": True})
+
+    def test_put_disables_and_persists(self):
+        self.assertEqual(self._json_response(self._set_status(False)), {"enabled": False})
+        self.assertEqual(json.loads(self.state_path.read_text(encoding="utf-8")), {"enabled": False})
+        self.assertEqual(self._json_response(self._get_status()), {"enabled": False})
+        self.assertEqual(self._json_response(self._set_status(True)), {"enabled": True})
+
+    def test_put_rejects_non_boolean(self):
+        response = asyncio.run(self.main.set_bot_status(FakeRequest({"enabled": "off"})))
+        self.assertEqual(self._status_code(response), 400)
+
+    def test_status_endpoints_reject_unauthenticated_requests(self):
+        with patch.object(self.main, "_current_user", return_value=None):
+            self.assertEqual(
+                self._status_code(self.main.get_bot_status(FakeRequest({}))), 401)
+            self.assertEqual(
+                self._status_code(asyncio.run(self.main.set_bot_status(FakeRequest({"enabled": False})))), 401)
+
+    def _meta_text(self, sender, text, mid):
+        return {"object": "whatsapp_business_account", "entry": [{"changes": [{"value": {"messages": [{
+            "from": sender, "id": f"wamid.{mid}", "type": "text", "text": {"body": text}}]}}]}]}
+
+    def _meta_button(self, sender, button_id):
+        return {"object": "whatsapp_business_account", "entry": [{"changes": [{"value": {"messages": [{
+            "from": sender, "id": f"wamid.{button_id}", "type": "interactive",
+            "interactive": {"button_reply": {"id": button_id}}}]}}]}]}
+
+    def test_disabled_text_is_recorded_but_silenced(self):
+        from admin.tests.whatsapp_test_harness import WhatsAppDryRun, run_webhook
+
+        self.state_path.write_text(json.dumps({"enabled": False}), encoding="utf-8")
+        dry_run = WhatsAppDryRun()
+        result = run_webhook(
+            FakeRequest(self._meta_text("15555551101", "Oi", "off-1")), dry_run)
+        self.assertEqual(result["status"], "bot_pausado")
+        self.assertEqual(dry_run.replies, [])
+        self.assertEqual(dry_run.buttons, [])
+        history = self.main._history_get("15555551101")
+        self.assertEqual([m["content"] for m in history if m["role"] == "user"], ["Oi"])
+
+    def test_disabled_button_is_silenced(self):
+        from admin.tests.whatsapp_test_harness import WhatsAppDryRun, run_webhook
+
+        self.state_path.write_text(json.dumps({"enabled": False}), encoding="utf-8")
+        dry_run = WhatsAppDryRun()
+        result = run_webhook(
+            FakeRequest(self._meta_button("15555551102", "loja_fisica")), dry_run)
+        self.assertEqual(result["status"], "bot_pausado")
+        self.assertEqual(dry_run.replies, [])
+        self.assertEqual(dry_run.buttons, [])
+
+    def test_enabled_greeting_flows_normally(self):
+        from admin.tests.whatsapp_test_harness import WhatsAppDryRun, run_webhook
+
+        dry_run = WhatsAppDryRun()
+        result = run_webhook(
+            FakeRequest(self._meta_text("15555551103", "Oi", "on-1")), dry_run)
+        self.assertEqual(result["status"], "greeted_tipo")
+
+    def test_panel_send_works_while_bot_disabled(self):
+        self.state_path.write_text(json.dumps({"enabled": False}), encoding="utf-8")
+        with (
+            patch.object(self.main, "_is_blocked", return_value=False),
+            patch.object(self.main, "_send_reply", return_value=None),
+        ):
+            response = asyncio.run(
+                self.main.send_conversation_message(
+                    "15555551104", FakeRequest({"text": "Olá, sou o André"}))
+            )
+        self.assertEqual(response, {"ok": True})
+
+    def test_followup_suppressed_while_bot_disabled(self):
+        import time
+
+        phone = "15555551105"
+        offer_ts = time.time() - 31 * 60
+        self.main.HISTORY[phone] = [
+            {"role": "user", "content": "Oi", "ts": offer_ts - 10},
+            {"role": "assistant",
+             "content": "Link: https://checkout.example.invalid/mega-plus/t3",
+             "ts": offer_ts},
+        ]
+        self.main.QUALIFY[phone] = {"step": "recomendacao"}
+        self.addCleanup(self.main.HISTORY.pop, phone)
+        self.addCleanup(self.main.QUALIFY.pop, phone)
+        with patch.object(
+            self.main, "_configured_checkout_links",
+            return_value={"https://checkout.example.invalid/mega-plus/t3"},
+        ):
+            self.assertTrue(self.main._needs_purchase_followup(phone))
+            self.state_path.write_text(json.dumps({"enabled": False}), encoding="utf-8")
+            self.assertFalse(self.main._needs_purchase_followup(phone))
+
+    def test_chat_page_exposes_bot_toggle(self):
+        page = (self.main.STATIC_DIR / "chat.html").read_text(encoding="utf-8")
+        self.assertIn('id="bot-toggle"', page)
+        self.assertIn("/api/bot/status", page)
 
 
 if __name__ == "__main__":

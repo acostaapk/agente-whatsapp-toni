@@ -251,6 +251,7 @@
             <span id="chat-subtitle">Atendimento humano · envio sempre manual</span>
           </div>
           <div class="head-actions">
+            <button class="sound-toggle" id="bot-toggle" type="button" aria-pressed="true" aria-label="Ligar ou desligar o bot">Bot: on</button>
             <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="true" aria-label="Ativar ou desativar som de mensagem nova">Som: on</button>
             <button class="drawer-toggle" id="conversations-drawer-toggle" type="button" aria-controls="conversation-sidebar" aria-expanded="false">Conversas</button>
             <button class="drawer-toggle" id="tools-drawer-toggle" type="button" aria-controls="support-panel" aria-expanded="false">Ferramentas</button>
@@ -515,6 +516,36 @@
       try { localStorage.setItem('toni-sound', soundEnabled ? 'on' : 'off'); } catch (error) { /* ignorar */ }
       updateSoundToggle();
       unlockMessageAudio();
+    });
+    function updateBotToggle(enabled) {
+      const toggle = document.getElementById('bot-toggle');
+      if (!toggle) return;
+      toggle.textContent = enabled ? 'Bot: on' : 'Bot: off';
+      toggle.setAttribute('aria-pressed', String(enabled));
+    }
+    async function loadBotStatus() {
+      try {
+        const data = await apiChecked('/api/bot/status');
+        updateBotToggle(data.enabled !== false);
+      } catch (error) {
+        if (error.message !== 'auth') setStatus('send-status', 'Não foi possível carregar o estado do bot.', true);
+      }
+    }
+    document.getElementById('bot-toggle').addEventListener('click', async (event) => {
+      const toggle = event.currentTarget;
+      const next = toggle.getAttribute('aria-pressed') !== 'true';
+      toggle.disabled = true;
+      try {
+        const data = await apiChecked('/api/bot/status', {
+          method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled: next}),
+        });
+        updateBotToggle(data.enabled !== false);
+        setStatus('send-status', data.enabled !== false ? 'Bot ligado.' : 'Bot desligado: novas mensagens ficam só registradas.');
+      } catch (error) {
+        setStatus('send-status', error.message === 'auth' ? '' : (error.message || 'Falha ao alternar o bot.'), true);
+      } finally {
+        toggle.disabled = false;
+      }
     });
     document.addEventListener('pointerdown', unlockMessageAudio, { once: true });
     document.addEventListener('keydown', unlockMessageAudio, { once: true });
@@ -1073,6 +1104,7 @@
 
     loadConvs();
     loadHumanSupportLibrary();
+    loadBotStatus();
     setInterval(loadConvs, 10000);
   </script>
 </body>

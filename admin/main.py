@@ -103,6 +103,28 @@ HUMAN_SUPPORT_ASSETS = [
 ]
 HUMAN_SUPPORT_ASSET_IDS = frozenset(asset["id"] for asset in HUMAN_SUPPORT_ASSETS)
 
+BOT_STATE_PATH = BASE / "config" / "bot-state.json"
+BOT_STATE_LOCK = threading.Lock()
+
+
+def _bot_enabled() -> bool:
+    try:
+        data = json.loads(BOT_STATE_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return True
+    if not isinstance(data, dict) or not isinstance(data.get("enabled"), bool):
+        return True
+    return data["enabled"]
+
+
+def _set_bot_enabled(enabled: bool) -> bool:
+    with BOT_STATE_LOCK:
+        temporary_path = BOT_STATE_PATH.with_name(BOT_STATE_PATH.name + ".tmp")
+        temporary_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path.write_text(json.dumps({"enabled": enabled}), encoding="utf-8")
+        os.replace(temporary_path, BOT_STATE_PATH)
+    return enabled
+
 
 def _human_support_read_library() -> dict:
     if not HUMAN_SUPPORT_REPLIES_PATH.exists():
@@ -425,6 +447,8 @@ def _last_checkout_offer(messages: list, links: list[str]) -> dict | None:
 
 
 def _needs_purchase_followup(phone: str) -> bool:
+    if not _bot_enabled():
+        return False
     msgs = _history_get(phone)
     if not msgs:
         return False
@@ -2709,6 +2733,34 @@ def _detect_model(resposta: str, modelos: list):
 
 
 # ---- Config (interface admin) ----
+@app.get("/api/bot/status")
+def get_bot_status(request: Request):
+    if not _current_user(request):
+        return JSONResponse({"error": "não autenticado"}, status_code=401)
+    return {"enabled": _bot_enabled()}
+
+
+@app.put("/api/bot/status")
+async def set_bot_status(request: Request):
+    if not _current_user(request):
+        return JSONResponse({"error": "não autenticado"}, status_code=401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "JSON inválido"}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "corpo deve ser um objeto"}, status_code=400)
+    enabled = body.get("enabled")
+    if not isinstance(enabled, bool):
+        return JSONResponse({"error": "enabled deve ser verdadeiro ou falso"}, status_code=400)
+    try:
+        _set_bot_enabled(enabled)
+    except OSError:
+        return JSONResponse({"error": "não foi possível salvar o estado do bot"}, status_code=500)
+    print(f"[bot-toggle] bot {'ligado' if enabled else 'desligado'} pelo painel", flush=True)
+    return {"enabled": enabled}
+
+
 @app.get("/api/human-support/library")
 def get_human_support_library(request: Request):
     if not _current_user(request):
@@ -2928,6 +2980,14 @@ async def whatsapp_message(request: Request):
         _log_event("opt_out", from_, "")
         print(f"[blocked] opt-out registrado para {from_}", flush=True)
         return {"ok": True, "status": "opt_out"}
+    # Bot desligado pelo painel: só registra, nunca responde (texto ou botão).
+    if from_ and not _bot_enabled():
+        if button_id:
+            _history_append(from_, "user", f"[botão] {button_id} (ignorado: bot desligado)")
+        elif texto:
+            _history_append(from_, "user", texto)
+        print(f"[bot-off] sem resposta para {from_}", flush=True)
+        return {"ok": True, "status": "bot_pausado"}
     if from_ and button_id:
         print(f"[btn] from={from_} botao={button_id!r}", flush=True)
         try:
