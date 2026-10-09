@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Criar conta — Toni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0c0e11; --ink-2: #12151a; --paper: #f2ede2; --paper-dim: #c6bfae;
+      --mute: #8a8f96; --line: rgba(242,237,226,0.10); --line-strong: rgba(242,237,226,0.18);
+      --signal: #4ade80; --amber: #f2b33d;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "IBM Plex Sans", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; }
+    body {
+      font-family: var(--font-body); background: var(--ink); color: var(--paper);
+      min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr;
+      -webkit-font-smoothing: antialiased;
+    }
+    @media (max-width: 860px) { body { grid-template-columns: 1fr; } .side { display: none; } }
+
+    .side {
+      position: relative; overflow: hidden; padding: 48px; display: flex; flex-direction: column;
+      justify-content: space-between;
+      background:
+        radial-gradient(900px 500px at 20% 0%, rgba(74,222,128,0.10), transparent 60%),
+        radial-gradient(700px 500px at 100% 100%, rgba(242,179,61,0.06), transparent 55%),
+        var(--ink-2);
+      border-right: 1px solid var(--line);
+    }
+    .side::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      opacity: .5;
+    }
+    .side .brand { font-family: var(--font-display); font-size: 34px; font-weight: 500; letter-spacing: -0.5px; }
+    .side .brand em { font-style: normal; color: var(--signal); }
+    .side .tag { font-family: var(--font-mono); font-size: 11px; color: var(--mute); letter-spacing: .16em; text-transform: uppercase; margin-top: 8px; }
+    .side .pitch { position: relative; z-index: 1; }
+    .side .pitch h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.08; letter-spacing: -0.8px; }
+    .side .pitch h2 em { font-style: italic; font-weight: 300; color: var(--signal); }
+    .side .pitch p { color: var(--paper-dim); margin-top: 16px; max-width: 40ch; line-height: 1.6; }
+    .side .receipt { font-family: var(--font-mono); font-size: 12px; color: var(--mute); margin-top: 32px; }
+    .side .receipt .row { display: flex; justify-content: space-between; padding: 4px 0; }
+
+    .main { display: flex; align-items: center; justify-content: center; padding: 40px 28px; }
+    .formbox { width: 100%; max-width: 380px; animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .formbox .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--signal); letter-spacing: .18em; text-transform: uppercase; }
+    .formbox h1 { font-family: var(--font-display); font-size: 32px; font-weight: 400; letter-spacing: -0.6px; margin-top: 8px; }
+    .formbox .sub { color: var(--mute); font-size: 14px; margin-top: 6px; }
+    .erro { margin-top: 16px; padding: 11px 13px; border: 1px solid rgba(248,113,113,.35); border-radius: 10px; background: rgba(248,113,113,.08); color: #fca5a5; font-size: 13px; }
+    .hidden { display: none; }
+    label { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin: 18px 0 7px; }
+    input {
+      width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,0.03); color: var(--paper); font-size: 15px; font-family: var(--font-body);
+      outline: none; transition: border-color .15s, background .15s;
+    }
+    input:focus { border-color: var(--signal); background: rgba(74,222,128,0.03); }
+    button, .btn {
+      width: 100%; padding: 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px;
+      font-weight: 600; text-align: center; text-decoration: none; margin-top: 22px; font-family: var(--font-body);
+      transition: filter .15s, transform .15s;
+    }
+    button:hover, .btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .primary { background: var(--signal); color: #06130b; }
+    .fb { background: #1877f2; color: #fff; display: block; margin-top: 12px; }
+    .sep { display: flex; align-items: center; gap: 12px; margin-top: 22px; color: var(--mute); font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; }
+    .sep::before, .sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .login-link { display: block; text-align: center; margin-top: 20px; font-size: 13px; color: var(--mute); }
+    .login-link a { color: var(--signal); text-decoration: none; }
+    .login-link a:hover { text-decoration: underline; }
+    .legal { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    .legal a { font-family: var(--font-mono); font-size: 11px; color: var(--mute); text-decoration: none; letter-spacing: .06em; }
+    .legal a:hover { color: var(--paper); }
+    :focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 4px; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <aside class="side">
+    <div>
+      <div class="brand">Ton<em>i</em></div>
+      <div class="tag">agente de atendimento automatizado</div>
+    </div>
+    <div class="pitch">
+      <h2>Atendimento ao cliente automatizado com a <em>API oficial da Meta</em>.</h2>
+      <p>Crie sua conta para acompanhar o atendimento da Toni e acessar o painel do seu agente.</p>
+      <div class="receipt">
+        <div class="row"><span>agente</span><span>Toni</span></div>
+        <div class="row"><span>canal</span><span>WhatsApp</span></div>
+      </div>
+    </div>
+    <div class="tag">© 2026 Toni</div>
+  </aside>
+
+  <main class="main">
+    <div class="formbox">
+      <div class="kicker">cadastro</div>
+      <h1>Criar conta</h1>
+      <p class="sub">Leva menos de um minuto.</p>
+      <div class="erro hidden" id="erro"></div>
+
+      <form id="form" autocomplete="on">
+        <label for="name">Nome</label>
+        <input type="text" id="name" name="name" required autocomplete="name" />
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="username" />
+        <label for="password">Senha</label>
+        <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password" />
+        <button type="submit" class="primary">Criar conta</button>
+      </form>
+
+      <div class="login-link">Já tem conta? <a href="/login">Entrar</a></div>
+
+      <div class="legal">
+        <a href="/privacidade">Privacidade</a>
+        <a href="/cookies">Cookies</a>
+        <a href="/termos">Termos</a>
+        <a href="/quem-somos">Quem somos</a>
+        <a href="/exclusao-de-dados">Exclusão de dados</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const d = document.getElementById('erro');
+        d.textContent = data.error || 'Falha no cadastro';
+        d.classList.remove('hidden');
+        return;
+      }
+      location.href = data.redirect || '/';
+    });
+  </script>
+</body>
+</html>

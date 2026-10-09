@@ -3,56 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin — Agente WhatsApp Toní</title>
+  <title>Admin — Toni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #1b221f; --muted: #4c5650; --paper: #ffffff; --surface: #eef3f0;
-      --rule: #dfe6e2; --ton: #88ff00; --ton-dark: #203d00; --ton-night: #002e1f;
+      --ink: #0c0e11; --ink-2: #12151a; --paper: #f2ede2; --paper-dim: #c6bfae;
+      --mute: #8a8f96; --line: rgba(242,237,226,0.10); --line-strong: rgba(242,237,226,0.18);
+      --signal: #4ade80; --amber: #f2b33d; --red: #f87171;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "IBM Plex Sans", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--surface); }
-    .wrap { max-width: 880px; margin-inline: auto; padding: 2rem 1.25rem 5rem; }
-    h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
-    .sub { color: var(--muted); margin: 0 0 1.5rem; }
-    .qr-link { display: inline-block; margin: 0 0 1.5rem; padding: .7rem 1.1rem; border-radius: 10px; background: var(--ton); color: var(--ton-night); font-weight: 700; text-decoration: none; border: 1px solid var(--ton-dark); }
-    .card { background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 1.25rem 1.4rem; margin-bottom: 1.1rem; }
-    .card h2 { font-size: 1.05rem; margin: 0 0 .9rem; color: var(--ton-dark); }
-    label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin: .7rem 0 .25rem; }
-    input[type=text], input[type=url], input[type=password], textarea {
-      width: 100%; padding: .6rem .7rem; border: 1px solid var(--rule); border-radius: 8px;
-      font: inherit; color: var(--ink); background: #fff; resize: vertical;
+    html { color-scheme: dark; }
+    body {
+      margin: 0; font-family: var(--font-body); color: var(--paper);
+      background: radial-gradient(1000px 500px at 90% -10%, rgba(74,222,128,0.06), transparent 60%), var(--ink);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
     }
-    textarea { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: .82rem; line-height: 1.45; }
+    body::after { content: ""; position: fixed; inset: 0; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"); opacity: .5; }
+
+    .topbar { display: flex; align-items: center; gap: 20px; padding: 16px 24px; border-bottom: 1px solid var(--line); position: relative; z-index: 1; max-width: 940px; margin: 0 auto; }
+    .topbar .brand { font-family: var(--font-display); font-size: 20px; font-weight: 500; white-space: nowrap; }
+    .topbar .brand em { font-style: normal; color: var(--signal); }
+    .topbar .spacer { flex: 1; }
+    .topbar a { font-family: var(--font-mono); font-size: 11px; color: var(--mute); text-decoration: none; letter-spacing: .06em; text-transform: uppercase; }
+    .topbar a:hover { color: var(--paper); }
+
+    .wrap { max-width: 880px; margin: 0 auto; padding: 2rem 1.25rem 5rem; position: relative; z-index: 1; }
+    header.doc { margin-bottom: 1.6rem; }
+    header.doc .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--signal); letter-spacing: .18em; text-transform: uppercase; }
+    header.doc h1 { font-family: var(--font-display); font-weight: 400; font-size: 34px; letter-spacing: -0.8px; margin: 6px 0 0; }
+    header.doc h1 .badge { font-family: var(--font-mono); font-size: 11px; color: var(--signal); border: 1px solid rgba(74,222,128,0.35); border-radius: 999px; padding: 3px 10px; vertical-align: middle; letter-spacing: .06em; }
+    header.doc .sub { color: var(--mute); font-size: 13px; margin-top: 8px; }
+
+    .qr-link { display: inline-block; margin-bottom: 1.4rem; padding: .65rem 1rem; border-radius: 10px; background: var(--signal); color: #06130b; font-family: var(--font-mono); font-size: 12px; font-weight: 600; text-decoration: none; letter-spacing: .04em; }
+    .qr-link:hover { filter: brightness(1.06); }
+
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.025), transparent); border: 1px solid var(--line); border-radius: 16px; padding: 1.3rem 1.4rem; margin-bottom: 1.1rem; }
+    .card h2 { font-family: var(--font-display); font-weight: 400; font-size: 18px; margin: 0 0 1rem; letter-spacing: -0.2px; }
+    .card h2 .n { font-family: var(--font-mono); font-size: 11px; color: var(--signal); margin-right: 8px; }
+    label { display: block; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin: .8rem 0 .3rem; }
+    input[type=text], input[type=url], input[type=password], select, textarea {
+      width: 100%; padding: .62rem .7rem; border: 1px solid var(--line-strong); border-radius: 9px;
+      font: inherit; font-size: 14px; color: var(--paper); background: rgba(255,255,255,0.03); resize: vertical; outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--signal); background: rgba(74,222,128,0.03); }
+    select { appearance: auto; }
+    textarea { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; }
     textarea.big { min-height: 260px; }
+    .model-row { display: flex; gap: .45rem; align-items: stretch; }
+    .model-row select { flex: 1; min-width: 0; }
+    .mini { padding: .5rem .8rem; border-radius: 8px; border: 1px solid var(--line-strong); background: rgba(255,255,255,0.03); color: var(--paper-dim); font-family: var(--font-mono); font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .mini:hover { border-color: var(--signal); color: var(--paper); }
+    .add-api-row { display: flex; gap: .45rem; flex-wrap: wrap; align-items: stretch; }
+    .add-api-row input { flex: 1; min-width: 150px; width: auto; }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 .9rem; }
     @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
-    .radio-row { display: flex; gap: 1.5rem; margin: .4rem 0 .5rem; }
-    .radio-row label { display: flex; align-items: center; gap: .4rem; font-size: .95rem; font-weight: 600; color: var(--ink); cursor: pointer; margin: 0; }
-    .radio-row input { accent-color: var(--ton-dark); }
-    .badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--ton-night); color: var(--ton); margin-left: .4rem; }
-    .actions { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--surface) 30%); padding: 1rem 0 .2rem; display: flex; gap: .8rem; align-items: center; }
-    button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: .8rem 1.6rem; cursor: pointer; }
-    .save { background: var(--ton-night); color: var(--ton); }
-    .save:hover { filter: brightness(1.15); }
-    #status { font-size: .85rem; color: var(--muted); }
-    #status.ok { color: #1a7f37; }
-    #status.err { color: #b3261e; }
+
+    .radio-row { display: flex; gap: .6rem; margin: .4rem 0 .5rem; }
+    .radio-row label { display: flex; align-items: center; gap: .5rem; font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--paper-dim); cursor: pointer; margin: 0; padding: .6rem 1rem; border: 1px solid var(--line-strong); border-radius: 10px; text-transform: none; letter-spacing: 0; }
+    .radio-row label:has(input:checked) { color: var(--signal); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.06); }
+    .radio-row input { accent-color: var(--signal); }
+
+    .badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 600; background: rgba(74,222,128,0.1); color: var(--signal); margin-left: .4rem; }
+    .actions { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--ink) 35%); padding: 1.2rem 0 .4rem; display: flex; gap: .8rem; align-items: center; }
+    button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: .75rem 1.4rem; cursor: pointer; font-family: var(--font-body); }
+    .save { background: var(--signal); color: #06130b; }
+    .save:hover { filter: brightness(1.06); }
+    #status { font-size: .85rem; color: var(--mute); font-family: var(--font-mono); }
+    #status.ok { color: var(--signal); }
+    #status.err { color: var(--red); }
     .hidden { display: none !important; }
     details { margin-top: .4rem; }
-    summary { cursor: pointer; font-weight: 600; font-size: .85rem; color: var(--ton-dark); }
-    .hint { font-size: .76rem; color: var(--muted); margin-top: .2rem; }
+    summary { cursor: pointer; font-family: var(--font-mono); font-size: 12px; color: var(--signal); }
+    .hint { font-size: .76rem; color: var(--mute); margin-top: .3rem; }
+    .hint code { color: var(--paper-dim); font-family: var(--font-mono); }
+    :focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
   </style>
 </head>
 <body>
+  <div class="topbar">
+    <div class="brand">Ton<em>i</em> <span style="color:var(--mute);font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;">· ADMIN</span></div>
+    <div class="spacer"></div>
+    <a href="/mensagens">Conversas</a>
+    <a href="/api/auth/logout" onclick="fetch('/api/auth/logout',{method:'POST'});return false;">Sair</a>
+  </div>
+
   <div class="wrap">
-    <h1>Agente WhatsApp — <span id="titulo-nome">Toní</span> <span class="badge">admin</span></h1>
-    <p class="sub">Selecione o canal (Baileys/Meta) e edite o prompt e os textos do agente. Salve para aplicar.</p>
+    <header class="doc">
+      <div class="kicker">configuração</div>
+      <h1>Agente <span id="titulo-nome">Toni</span> <span class="badge">admin</span></h1>
+      <p class="sub">Selecione o canal (Baileys/Meta) e edite o prompt e os textos do agente. Salve para aplicar.</p>
+    </header>
 
     <a class="qr-link" href="https://wa.analisereview.com.br/qr" target="_blank" rel="noopener">📱 Parear WhatsApp — abrir QR code</a>
 
     <form id="form">
       <div class="card">
-        <h2>Canal de WhatsApp</h2>
+        <h2><span class="n">01</span>Canal de WhatsApp</h2>
         <div class="radio-row">
           <label><input type="radio" name="canal" value="baileys" /> Baileys (Evolution API)</label>
           <label><input type="radio" name="canal" value="meta" /> Meta Cloud API</label>
@@ -61,7 +113,7 @@
       </div>
 
       <div class="card">
-        <h2>Identidade</h2>
+        <h2><span class="n">02</span>Identidade</h2>
         <div class="grid2">
           <div><label>Nome do agente</label><input type="text" name="agente_nome" /></div>
           <div><label>Empresa</label><input type="text" name="empresa_nome" /></div>
@@ -73,35 +125,57 @@
       </div>
 
       <div class="card">
-        <h2>Prompt do agente (system message)</h2>
-        <label>Usa os placeholders {{agente_nome}}, {{empresa_nome}}, {{servico_principal}}, {{base_conhecimento}}, {{criterio_alto_valor}}, {{link_app}}.</label>
+        <h2><span class="n">03</span>Prompt do agente (system message)</h2>
+        <label>Placeholders: {{agente_nome}}, {{empresa_nome}}, {{servico_principal}}, {{base_conhecimento}}, {{criterio_alto_valor}}, {{link_app}}.</label>
         <textarea class="big" name="system_message"></textarea>
       </div>
 
       <div class="card">
-        <h2>Base de conhecimento</h2>
+        <h2><span class="n">04</span>Base de conhecimento</h2>
         <label>Condições, modelos, taxas e regras que o agente pode citar (nunca invente além disso).</label>
         <textarea class="big" name="base_conhecimento"></textarea>
       </div>
 
       <div class="card">
-        <h2>Modelos (foto + link direto)</h2>
-        <label>Array JSON: id, nome, foto, link. Ex.: <code>[{"id":"t1","nome":"T1","foto":"https://...","link":"https://..."}]</code></label>
+        <h2><span class="n">05</span>Modelos (foto + link direto)</h2>
+        <label>Array JSON. Ex.: <code>[{"id":"t1","nome":"T1","foto":"https://...","link":"https://..."}]</code></label>
         <textarea name="modelos" style="min-height:160px"></textarea>
       </div>
 
       <div class="card">
-        <h2>LLM do agente</h2>
+        <h2><span class="n">06</span>LLM do agente</h2>
         <div class="grid2">
-          <div><label>Modelo</label><input type="text" name="llm.model" /></div>
-          <div><label>Base URL (OpenAI-compatível)</label><input type="url" name="llm.base_url" /></div>
+          <div>
+            <label>API</label>
+            <div class="model-row">
+              <select name="llm.provider" id="llm-provider"></select>
+              <button type="button" class="mini" id="llm-del-api" title="Remover a API selecionada da lista">✕</button>
+            </div>
+          </div>
+          <div>
+            <label>Modelo</label>
+            <div class="model-row">
+              <select name="llm.model" id="llm-model"></select>
+              <button type="button" class="mini" id="llm-refresh" title="Listar os modelos da API selecionada">↻ Listar</button>
+            </div>
+          </div>
         </div>
-        <label>API Key</label><input type="password" name="llm.api_key" />
-        <p class="hint">Usado pelo nó AI Agent (n8n) e pelo graphify. Mesmo endpoint local.</p>
+        <div class="grid2">
+          <div><label>Base URL (OpenAI-compatível)</label><input type="url" name="llm.base_url" /></div>
+          <div><label>API Key</label><input type="password" name="llm.api_key" /></div>
+        </div>
+        <label>Adicionar outra API</label>
+        <div class="add-api-row">
+          <input type="text" id="api-nome" placeholder="Nome (ex.: Minha conta OpenAI)" />
+          <input type="url" id="api-base" placeholder="https://api.exemplo.com/v1" />
+          <input type="password" id="api-key" placeholder="chave da API" />
+          <button type="button" class="mini" id="llm-add-api">+ Adicionar</button>
+        </div>
+        <p class="hint">Escolher uma API preenche Base URL/Key e carrega os modelos. "↻ Listar" atualiza; APIs adicionadas entram na lista — Salvar persiste.</p>
       </div>
 
       <div class="card" id="card-baileys">
-        <h2>Conexão — Baileys (Evolution API)</h2>
+        <h2><span class="n">07</span>Conexão — Baileys (Evolution API)</h2>
         <div class="grid2">
           <div><label>API URL</label><input type="url" name="evolution.api_url" /></div>
           <div><label>Instância</label><input type="text" name="evolution.instance" /></div>
@@ -110,7 +184,7 @@
       </div>
 
       <div class="card hidden" id="card-meta">
-        <h2>Conexão — Meta Cloud API</h2>
+        <h2><span class="n">07</span>Conexão — Meta Cloud API</h2>
         <div class="grid2">
           <div><label>Phone Number ID</label><input type="text" name="meta.phone_number_id" /></div>
           <div><label>Versão</label><input type="text" name="meta.version" /></div>
@@ -140,7 +214,7 @@
     }
 
     function populate(cfg) {
-      nomeSpan.textContent = cfg.agente_nome || 'Toní';
+      nomeSpan.textContent = cfg.agente_nome || 'Toni';
       const radio = form.querySelector(`input[name=canal][value="${cfg.canal || 'baileys'}"]`);
       if (radio) radio.checked = true;
       const simple = ['agente_nome','empresa_nome','servico_principal','tempo_reengajamento','criterio_alto_valor','link_app','system_message','base_conhecimento'];
@@ -162,7 +236,82 @@
         const el = form.querySelector(`[name="llm.${k}"]`);
         if (el) el.value = cfg.llm?.[k] ?? '';
       });
+      providers = Array.isArray(cfg.llm?.providers)
+        ? cfg.llm.providers.map(p => ({ nome: p?.nome || '', base_url: p?.base_url || '', api_key: p?.api_key || '' }))
+        : [];
+      renderProviders(matchProvider());
+      const llmSel = form.querySelector('select[name="llm.model"]');
+      if (llmSel) {
+        const v = cfg.llm?.model ?? '';
+        if (v && ![...llmSel.options].some(o => o.value === v)) {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = v;
+          llmSel.appendChild(o);
+        }
+        if (v) llmSel.value = v;
+      }
       syncCanal();
+    }
+
+    let providers = [];
+
+    function renderProviders(selIdx) {
+      const sel = form.querySelector('select[name="llm.provider"]');
+      sel.innerHTML = '';
+      const manual = document.createElement('option');
+      manual.value = '';
+      manual.textContent = '— Base URL manual —';
+      sel.appendChild(manual);
+      providers.forEach((p, i) => {
+        const o = document.createElement('option');
+        o.value = String(i);
+        o.textContent = p.nome || ('API ' + (i + 1));
+        sel.appendChild(o);
+      });
+      sel.value = (selIdx >= 0 && selIdx < providers.length) ? String(selIdx) : '';
+    }
+
+    function matchProvider() {
+      const norm = s => (s || '').trim().replace(/\/+$/, '');
+      const base = norm(form.querySelector('[name="llm.base_url"]').value);
+      const key = form.querySelector('[name="llm.api_key"]').value;
+      return providers.findIndex(p => norm(p.base_url) === base && (p.api_key || '') === key);
+    }
+
+    async function loadLlmModels() {
+      const sel = form.querySelector('select[name="llm.model"]');
+      const base = form.querySelector('[name="llm.base_url"]').value;
+      const key = form.querySelector('[name="llm.api_key"]').value;
+      const cur = sel.value;
+      try {
+        const res = await fetch('/api/llm/models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base_url: base, api_key: key }),
+        });
+        const j = await res.json();
+        if (!j.ok) throw new Error(j.erro || res.statusText);
+        sel.innerHTML = '';
+        (j.models || []).forEach(m => {
+          const o = document.createElement('option');
+          o.value = m.id;
+          let label = m.display;
+          if (m.quant) label += ' · ' + m.quant;
+          if (m.loaded) label += ' · carregado';
+          o.textContent = label;
+          sel.appendChild(o);
+        });
+        const wanted = cur || j.current;
+        if (wanted && ![...sel.options].some(o => o.value === wanted)) {
+          const o = document.createElement('option');
+          o.value = wanted; o.textContent = wanted + ' (salvo)';
+          sel.appendChild(o);
+        }
+        if (wanted) sel.value = wanted;
+        setStatus(`${(j.models || []).length} modelo(s) no servidor ✓`, true);
+      } catch (err) {
+        setStatus('Erro ao listar modelos: ' + (err.message || err), false);
+      }
     }
 
     function syncCanal() {
@@ -172,6 +321,47 @@
     }
 
     form.querySelectorAll('input[name=canal]').forEach(r => r.addEventListener('change', syncCanal));
+    document.getElementById('llm-refresh').addEventListener('click', loadLlmModels);
+
+    form.querySelector('select[name="llm.provider"]').addEventListener('change', (e) => {
+      const i = e.target.value;
+      if (i === '') return;
+      const p = providers[+i];
+      if (!p) return;
+      form.querySelector('[name="llm.base_url"]').value = p.base_url || '';
+      form.querySelector('[name="llm.api_key"]').value = p.api_key || '';
+      loadLlmModels();
+    });
+
+    ['llm.base_url', 'llm.api_key'].forEach(n => {
+      form.querySelector(`[name="${n}"]`).addEventListener('input', () => {
+        form.querySelector('select[name="llm.provider"]').value = '';
+      });
+    });
+
+    document.getElementById('llm-add-api').addEventListener('click', () => {
+      const nome = document.getElementById('api-nome').value.trim();
+      const base = document.getElementById('api-base').value.trim();
+      const key = document.getElementById('api-key').value;
+      if (!nome || !base) { setStatus('Informe nome e Base URL da API.', false); return; }
+      providers.push({ nome, base_url: base, api_key: key });
+      renderProviders(providers.length - 1);
+      form.querySelector('[name="llm.base_url"]').value = base;
+      form.querySelector('[name="llm.api_key"]').value = key;
+      document.getElementById('api-nome').value = '';
+      document.getElementById('api-base').value = '';
+      document.getElementById('api-key').value = '';
+      setStatus('API adicionada à lista — Salvar configuração pra persistir.', true);
+      loadLlmModels();
+    });
+
+    document.getElementById('llm-del-api').addEventListener('click', () => {
+      const sel = form.querySelector('select[name="llm.provider"]');
+      if (sel.value === '') { setStatus('Selecione uma API da lista pra remover.', false); return; }
+      providers.splice(+sel.value, 1);
+      renderProviders(-1);
+      setStatus('API removida da lista — Salvar configuração pra persistir.', true);
+    });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -201,6 +391,7 @@
           model: data.get('llm.model'),
           base_url: data.get('llm.base_url'),
           api_key: data.get('llm.api_key'),
+          providers: providers,
         },
       };
       try {
@@ -228,6 +419,7 @@
         const res = await fetch('/api/config');
         if (!res.ok) throw new Error(res.statusText);
         populate(await res.json());
+        loadLlmModels();
       } catch (err) {
         setStatus('Erro ao carregar config: ' + err.message, false);
       }

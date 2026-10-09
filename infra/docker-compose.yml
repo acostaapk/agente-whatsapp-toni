@@ -41,23 +41,27 @@ services:
     ports:
       - "8080:8080"
 
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      GENERIC_TIMEZONE: America/Sao_Paulo
-      TZ: America/Sao_Paulo
-      N8N_SECURE_COOKIE: "false"
-      N8N_DIAGNOSTICS_ENABLED: "false"
-      N8N_METRICS: "false"
-      N8N_HOST: wa.analisereview.com.br
-      N8N_PROTOCOL: https
-      N8N_USER_MANAGEMENT_DISABLED: "true"
-      N8N_API_KEY: ${N8N_API_KEY}
-    volumes:
-      - n8n_data:/home/node/.n8n
+  # n8n removido em 07/10/2026: o webhook da Meta fala direto com o admin:8090.
+  # O workflow antigo (n8n/workflow_meta_cloud_api.json) foi desativado por
+  # responder com LLM cru, sem botões/slots/guardrails. Manter fora.
+  # Para reativar (batch/CRM): descomentar o bloco abaixo.
+  # n8n:
+  #   image: n8nio/n8n:latest
+  #   container_name: n8n
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   environment:
+  #     GENERIC_TIMEZONE: America/Sao_Paulo
+  #     TZ: America/Sao_Paulo
+  #     N8N_SECURE_COOKIE: "false"
+  #     N8N_DIAGNOSTICS_ENABLED: "false"
+  #     N8N_METRICS: "false"
+  #     N8N_HOST: wa.analisereview.com.br
+  #     N8N_PROTOCOL: https
+  #     N8N_USER_MANAGEMENT_DISABLED: "true"
+  #     N8N_API_KEY: ${N8N_API_KEY}
+  #   volumes:
+  #     - n8n_data:/home/node/.n8n
 
   admin:
     build: ../admin
@@ -66,6 +70,7 @@ services:
     network_mode: host
     volumes:
       - ../admin/config:/app/config
+      - ../audios:/app/audios:ro
 
 volumes:
   evolution_pgdata:

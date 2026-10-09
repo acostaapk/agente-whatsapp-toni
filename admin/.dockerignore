@@ -1,0 +1,11 @@
+.env
+.env.*
+config/
+backups/
+tests/
+docs/
+__pycache__/
+*.py[cod]
+*.db
+*.jsonl
+*.bak*

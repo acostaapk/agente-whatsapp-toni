@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Termos de Uso — Toni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0c0e11; --paper: #f2ede2; --paper-dim: #c6bfae; --mute: #8a8f96;
+      --line: rgba(242,237,226,0.10); --signal: #4ade80;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "IBM Plex Sans", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; }
+    body { font-family: var(--font-body); color: var(--paper); background: radial-gradient(1000px 500px at 90% -10%, rgba(74,222,128,0.06), transparent 60%), var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    .topbar { max-width: 880px; margin: 0 auto; padding: 24px; display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--line); }
+    .topbar .brand { font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+    .topbar .brand em { font-style: normal; color: var(--signal); }
+    .topbar a { font-family: var(--font-mono); font-size: 11px; color: var(--mute); text-decoration: none; letter-spacing: .08em; text-transform: uppercase; }
+    .topbar a:hover { color: var(--paper); }
+    main { max-width: 880px; margin: 0 auto; padding: 0 24px 80px; }
+    header.doc { padding: 56px 0 40px; }
+    header.doc .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--signal); letter-spacing: .18em; text-transform: uppercase; }
+    header.doc h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 5vw, 54px); letter-spacing: -1px; line-height: 1.05; margin-top: 10px; }
+    header.doc .meta { font-family: var(--font-mono); font-size: 12px; color: var(--mute); margin-top: 16px; }
+    article h2 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 40px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+    article h2 .n { font-family: var(--font-mono); font-size: 12px; color: var(--signal); margin-right: 10px; vertical-align: 2px; }
+    article p, article li { font-size: 15px; line-height: 1.7; color: var(--paper-dim); max-width: 68ch; }
+    article p + p { margin-top: 12px; }
+    article ul { padding-left: 20px; margin: 10px 0; }
+    article li { margin: 6px 0; }
+    article strong { color: var(--paper); font-weight: 600; }
+    .last-updated { font-family: var(--font-mono); font-size: 11px; color: var(--mute); margin-top: 48px; padding-top: 16px; border-top: 1px dashed var(--line); }
+    :focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">Ton<em>i</em></div>
+    <a href="/">← voltar</a>
+  </div>
+  <main>
+    <header class="doc">
+      <div class="kicker">legal</div>
+      <h1>Termos de Uso</h1>
+      <div class="meta">Condições para uso do serviço de atendimento</div>
+    </header>
+    <article>
+      <h2><span class="n">01</span>O serviço</h2>
+      <p>O serviço consiste em um agente de atendimento ("Toni") que automatiza o atendimento ao cliente no WhatsApp,
+      usando a API oficial da Meta. O agente responde e orienta, não realiza vendas diretas.</p>
+
+      <h2><span class="n">02</span>Natureza da informação</h2>
+      <p>As informações fornecidas pelo agente são baseadas em fontes públicas e podem sofrer alteração. Não garantimos a
+      exatidão permanente dos conteúdos, que devem ser confirmados nos canais oficiais.</p>
+
+      <h2><span class="n">03</span>Responsabilidades do usuário</h2>
+      <ul>
+        <li>Fornecer informações verdadeiras e não utilizar o serviço para fins ilícitos.</li>
+        <li>Não tentar acessar, extrair ou manipular o sistema de forma não autorizada.</li>
+      </ul>
+
+      <h2><span class="n">04</span>Não é oferta financeira</h2>
+      <p>O serviço não presta consultoria financeira, não promete recompensas, rendimentos ou ganhos. Recomendações são
+      apenas informativas.</p>
+
+      <h2><span class="n">05</span>Interrupções e disponibilidade</h2>
+      <p>Não garantimos disponibilidade ininterrupta do serviço. Podemos suspender ou encerrar o serviço a qualquer
+      momento, a nosso critério.</p>
+
+      <h2><span class="n">06</span>Propriedade intelectual</h2>
+      <p>O conteúdo, a marca e o código do serviço pertencem à Toni e não podem ser reproduzidos sem autorização.</p>
+
+      <h2><span class="n">07</span>Alterações</h2>
+      <p>Estes termos podem ser atualizados periodicamente. A versão vigente estará sempre publicada nesta página.</p>
+
+      <h2><span class="n">08</span>Contato</h2>
+      <p>Dúvidas: <a href="mailto:contato@analisereview.com.br" style="color:var(--signal);text-decoration:none;">contato@analisereview.com.br</a>.</p>
+
+      <div class="last-updated">Última atualização: 04 de outubro de 2026</div>
+    </article>
+  </main>
+</body>
+</html>

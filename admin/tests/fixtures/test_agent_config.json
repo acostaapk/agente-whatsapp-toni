@@ -1,0 +1,31 @@
+{
+  "canal": "meta",
+  "agente_nome": "Agente de teste",
+  "empresa_nome": "Empresa de teste",
+  "servico_principal": "produto de teste",
+  "criterio_alto_valor": "não definido",
+  "link_app": "https://example.invalid/app",
+  "base_conhecimento": "Fixture sintética para testes do webhook.",
+  "system_message": "Responda de forma breve e útil.",
+  "modelos": [],
+  "llm": {
+    "base_url": "http://llm.test.invalid/v1",
+    "api_key": "test-only",
+    "model": "test-model"
+  },
+  "meta": {
+    "phone_number_id": "TEST_PHONE_NUMBER_ID",
+    "access_token": "test-only",
+    "version": "v25.0",
+    "business_events": {"enabled": false}
+  },
+  "_test_http_json_response": {
+    "choices": [
+      {
+        "message": {
+          "content": "A opção adequada depende das necessidades do seu negócio e do tipo de atendimento."
+        }
+      }
+    ]
+  }
+}

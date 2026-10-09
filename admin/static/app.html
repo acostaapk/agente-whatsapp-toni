@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Toni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0c0e11;
+      --ink-2: #12151a;
+      --paper: #f2ede2;
+      --paper-dim: #c6bfae;
+      --mute: #8a8f96;
+      --line: rgba(242, 237, 226, 0.10);
+      --line-strong: rgba(242, 237, 226, 0.18);
+      --signal: #4ade80;
+      --amber: #f2b33d;
+      --font-display: "Fraunces", Georgia, serif;
+      --font-body: "IBM Plex Sans", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { color-scheme: dark; }
+    body {
+      font-family: var(--font-body);
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(74, 222, 128, 0.07), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(242, 179, 61, 0.05), transparent 55%),
+        var(--ink);
+      color: var(--paper);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::after {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+    .shell { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 0 24px 64px; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0; border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: baseline; gap: 10px; }
+    .brand .mark { font-family: var(--font-display); font-size: 26px; font-weight: 500; letter-spacing: -0.5px; }
+    .brand .mark em { font-style: normal; color: var(--signal); }
+    .brand .sub { font-family: var(--font-mono); font-size: 11px; color: var(--mute); letter-spacing: 0.14em; text-transform: uppercase; }
+    .topbar .actions { display: flex; align-items: center; gap: 12px; }
+    .pill {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 12px; color: var(--paper-dim);
+      display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.02);
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+    .logout {
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+      background: none; border: none; color: var(--mute); cursor: pointer; padding: 8px 10px;
+      transition: color .15s;
+    }
+    .logout:hover { color: var(--paper); }
+
+    .hero { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; padding: 52px 0 36px; }
+    .avatar {
+      width: 76px; height: 76px; border-radius: 22px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 32px; font-weight: 500;
+      background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(74,222,128,0.04));
+      border: 1px solid var(--line-strong);
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .hero .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--signal); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 8px; }
+    .hero h1 { font-family: var(--font-display); font-size: clamp(34px, 5vw, 56px); font-weight: 400; line-height: 1.02; letter-spacing: -1px; }
+    .hero h1 em { font-style: italic; font-weight: 300; }
+    .hero .email { font-family: var(--font-mono); font-size: 13px; color: var(--mute); margin-top: 12px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008));
+      border: 1px solid var(--line); border-radius: 18px; padding: 26px;
+      position: relative; overflow: hidden;
+      animation: rise .6s cubic-bezier(.2,.7,.2,1) both;
+    }
+    .card:nth-child(1) { animation-delay: .05s; }
+    .card:nth-child(2) { animation-delay: .12s; }
+    .card:nth-child(3) { animation-delay: .19s; }
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+    .card .label { font-family: var(--font-mono); font-size: 11px; color: var(--mute); letter-spacing: 0.14em; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; }
+    .card .label .idx { color: var(--line-strong); }
+    .card h2 { font-family: var(--font-display); font-size: 24px; font-weight: 400; margin-top: 14px; letter-spacing: -0.4px; }
+
+    .span-7 { grid-column: span 7; }
+    .span-5 { grid-column: span 5; }
+    .span-12 { grid-column: span 12; }
+    @media (max-width: 720px) { .span-7, .span-5, .span-12 { grid-column: span 12; } }
+
+    .kvs { margin-top: 18px; display: flex; flex-direction: column; }
+    .kv { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-top: 1px dashed var(--line); }
+    .kv .k { font-family: var(--font-mono); font-size: 12px; color: var(--mute); letter-spacing: 0.04em; }
+    .kv .v { font-family: var(--font-mono); font-size: 13px; color: var(--paper); text-align: right; }
+
+    .statusline { display: flex; align-items: center; gap: 10px; margin-top: 18px; font-family: var(--font-mono); font-size: 13px; }
+    .statusline .led { width: 10px; height: 10px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 12px var(--signal); }
+    .statusline .led.off { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
+
+    .cta {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 20px; padding: 15px; border-radius: 12px; text-decoration: none;
+      background: var(--signal); color: #06130b; font-family: var(--font-mono); font-size: 13px;
+      font-weight: 600; letter-spacing: 0.04em; transition: transform .15s, filter .15s;
+    }
+    .cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .cta svg { width: 16px; height: 16px; }
+
+    .receipt { margin-top: 18px; font-family: var(--font-mono); font-size: 12px; color: var(--mute); }
+    .receipt .row { display: flex; justify-content: space-between; padding: 5px 0; }
+    .receipt .sep { text-align: center; color: var(--line-strong); letter-spacing: 0.4em; padding: 6px 0; }
+
+    .legal { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 18px; }
+    .legal a { font-family: var(--font-mono); font-size: 11px; color: var(--mute); text-decoration: none; letter-spacing: 0.06em; transition: color .15s; }
+    .legal a:hover { color: var(--paper); }
+
+    :focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; border-radius: 4px; }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">Ton<em>i</em></div>
+        <div class="sub">Toni</div>
+      </div>
+      <div class="actions">
+        <a class="logout" href="/mensagens" style="text-decoration:none;">conversas</a>
+        <span class="pill"><span class="dot" id="pill-dot"></span><span id="pill-text">conectando</span></span>
+        <button class="logout" id="logout">sair →</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="avatar" id="avatar">T</div>
+      <div>
+        <div class="kicker">agente de atendimento</div>
+        <h1 id="saudacao">Olá.</h1>
+        <div class="email" id="sub">carregando…</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card span-7">
+        <div class="label">Status do atendimento <span class="idx">01</span></div>
+        <h2 id="status-titulo">—</h2>
+        <div class="statusline"><span class="led" id="led"></span><span id="status-texto">verificando…</span></div>
+        <div class="kvs">
+          <div class="kv"><span class="k">canal</span><span class="v" id="kv-canal">—</span></div>
+          <div class="kv"><span class="k">agente</span><span class="v">Toni</span></div>
+          <div class="kv"><span class="k">serviço</span><span class="v" id="kv-servico">—</span></div>
+        </div>
+      </div>
+
+      <div class="card span-5">
+        <div class="label">Fale com a Toni <span class="idx">02</span></div>
+        <h2 style="font-size:22px;">Automatize seu atendimento no WhatsApp.</h2>
+        <p class="receipt" style="margin-top:12px;">Agente de atendimento automatizado — com a API oficial da Meta.</p>
+        <a class="cta" href="#" id="wa-link" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Abrir WhatsApp
+        </a>
+      </div>
+
+      <div class="card span-12">
+        <div class="label">Sua sessão <span class="idx">03</span></div>
+        <div class="receipt">
+          <div class="row"><span>acesso</span><span id="rc-provider">—</span></div>
+          <div class="row"><span>e-mail</span><span id="rc-email">—</span></div>
+          <div class="sep">* * *</div>
+          <div class="row"><span>política de privacidade</span><span><a href="/privacidade" style="color:var(--signal);">ver</a></span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="legal">
+      <a href="/privacidade">Privacidade</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/termos">Termos</a>
+      <a href="/quem-somos">Quem somos</a>
+      <a href="/exclusao-de-dados">Exclusão de dados</a>
+    </footer>
+  </div>
+
+  <script>
+    async function load() {
+      const meRes = await fetch('/api/auth/me');
+      if (!meRes.ok) { location.href = '/login'; return; }
+      const me = (await meRes.json()).user;
+      const primeiro = (me.name || 'Toni').trim().split(/\s+/)[0];
+      document.getElementById('saudacao').innerHTML = 'Olá, <em>' + primeiro + '</em>.';
+      document.getElementById('sub').textContent = me.email || '';
+      document.getElementById('rc-email').textContent = me.email || '—';
+      document.getElementById('rc-provider').textContent = me.provider === 'facebook' ? 'Facebook' : 'e-mail';
+      const av = document.getElementById('avatar');
+      if (me.picture_url) { av.innerHTML = '<img src="' + me.picture_url + '" alt="avatar" />'; }
+      else { av.textContent = (me.name || 'T').trim().charAt(0).toUpperCase(); }
+
+      try {
+        const cfg = (await (await fetch('/api/config')).json());
+        const canal = cfg.canal || 'baileys';
+        document.getElementById('kv-canal').textContent = canal === 'meta' ? 'Meta Cloud API' : 'Baileys (piloto)';
+        document.getElementById('kv-servico').textContent = cfg.servico_principal || '—';
+        const dot = document.getElementById('pill-dot');
+        const pill = document.getElementById('pill-text');
+        const led = document.getElementById('led');
+        if (canal === 'meta') {
+          pill.textContent = 'oficial meta';
+          document.getElementById('status-titulo').textContent = 'Atendimento ativo.';
+          document.getElementById('status-texto').textContent = 'Canal oficial — WhatsApp Cloud API';
+          dot.style.background = 'var(--signal)';
+          led.classList.remove('off');
+        } else {
+          pill.textContent = 'piloto baileys';
+          document.getElementById('status-titulo').textContent = 'Atendimento em piloto.';
+          document.getElementById('status-texto').textContent = 'Canal piloto — Evolution API';
+          dot.style.background = 'var(--amber)';
+          led.classList.add('off');
+        }
+      } catch (e) {
+        document.getElementById('status-texto').textContent = 'status indisponível';
+      }
+    }
+
+    document.getElementById('logout').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      location.href = '/login';
+    });
+    load();
+  </script>
+</body>
+</html>

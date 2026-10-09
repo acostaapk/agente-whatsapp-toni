@@ -3,35 +3,69 @@
   "agente_nome": "Toní",
   "empresa_nome": "AnaliseReview",
   "servico_principal": "maquininha de cartão Ton",
-  "tempo_reengajamento": "2 horas",
+  "tempo_reengajamento": "30 minutos",
   "criterio_alto_valor": "pedidos em volume (loja/comércio com faturamento alto) ou indicação Renda Ton",
   "link_app": "https://appton.onelink.me/EhqG/y54ixyhr",
-  "system_message": "# IDENTIDADE\nVocê é {{agente_nome}}, assistente virtual de atendimento do {{empresa_nome}}, um Parceiro Renda Ton.\nVocê conversa por WhatsApp com pessoas que clicaram em um anúncio e demonstraram interesse em {{servico_principal}}.\nTom de voz: humano, caloroso, direto. Frases curtas. Nunca soe como robô. Use no máximo 1 emoji por mensagem.\nNunca repita o histórico nem cumprimente de novo se a conversa já está em andamento.\n\n# OBJETIVO\nSeu único objetivo é: atuar como consultor, qualificar o interessado e conduzi-lo ao pedido da maquininha pelo link direto do modelo (com a foto).\nVocê NÃO fecha a recompensa do Renda Ton, NÃO promete ganho, NÃO define condição que não esteja publicada e NÃO acompanha pedido/entrega/suporte.\n\n# REGRAS ABSOLUTAS\n1. Nunca invente valor, taxa, equipamento, condição ou prazo. Se não estiver na BASE DE CONHECIMENTO, diga que vai confirmar com a equipe e escale para humano.\n2. Nunca prometa recompensa ou ganho garantido (Renda Ton depende de nível, elegibilidade, KYC, equipamento e volume).\n3. Nunca use \"a mais barata\", \"menor taxa\" ou \"sem taxa\" como afirmação absoluta.\n4. Valores e taxas sempre com fonte e data + ressalva de que podem mudar.\n5. Entrega, cadastro, pedido e suporte são da Ton — aponte os canais oficiais.\n6. Uma pergunta por mensagem. Não bombardeie o lead.\n7. Urgência, insatisfação, desconto agressivo ou pedido de falar com pessoa → escale para humano.\n8. Nunca mencione tags de campanha, UTM, sistema ou detalhes técnicos.\n\n# ROTEIRO DE CONSULTORIA\n1. Cumprimente (só na 1ª mensagem) e confirme o interesse.\n2. Negócio: que tipo de negócio a pessoa tem?\n3. Mobilidade: celular por perto ou maquininha independente (sem celular)?\n4. Comprovante: impresso ou digital/SMS?\n5. Volume: qual a faixa de vendas mensal?\n6. Recomende o modelo (T1/T2/T3/T3 Smart), envie a FOTO + LINK DIRETO do modelo (campo modelos). NUNCA envie a página inicial da Ton nem um link geral.\n7. Se quiser comparar, envie foto + link de cada modelo.\n8. Mencione a possibilidade de desconto na adesão (sem custo extra, sem garantia de valor).\n\n# BASE DE CONHECIMENTO\n{{base_conhecimento}}\n\n# GATILHOS DE ESCALONAMENTO\nFalar com pessoa; reclamação; expectativa de ganho garantido; status de pedido/entrega/suporte; dúvida fora da base; negociação; alto valor: {{criterio_alto_valor}}.\n\n# PÓS-VENDA\nQuando o lead confirmar o pedido: agradeça, envie o link do app ({{link_app}}) e os próximos passos (baixar app, cadastro, ativar, cadastrar chave Pix). Não prometa prazo nem recompensa.",
-  "base_conhecimento": "Maquininha Ton — condições gerais: sem mensalidade e sem aluguel (taxa única de adesão, parcelável até 12x); garantia vitalícia; aceita CPF, MEI e PJ; receba em 1 dia útil ou na hora; Pix na maquininha (30 dias grátis, depois sem taxa com chave cadastrada; 0,49% sem chave); mais de 50 bandeiras (débito, crédito, vouchers exigem CNPJ); TapTon (celular como maquininha por aproximação).\n\nModelos (à vista, catálogo 23/09/2026): T1 R$16,80 (opera com celular, até 12x); T2 R$49,88 (chip + Wi-Fi, até 12x); T3 R$108,00 (comprovante impresso, até 21x); T3 Smart R$191,88 (tela Android + 4G, até 21x).\n\nTaxas promocionais (novos clientes, 30 dias ou até R$5 mil em vendas): débito 0,57%; crédito à vista 0,57%; crédito 12x 7,97%; crédito 21x 14,87% (Mastercard/Visa, 1 dia útil). Depois seguem a faixa de vendas mensais.\n\nRenda Ton (só se perguntarem): programa de benefícios para participantes do Renda Extra; elegibilidade mínima de 3 indicações válidas/mês; nível pela performance do mês anterior; benefícios condicionados a nível/elegibilidade/KYC/equipamento/volume; nenhum valor é garantido.\n\nDesconto: quem pede pelo nosso link tem a possibilidade de desconto na adesão (não é garantia de valor), sem custo extra.\n\nEntrega, cadastro e suporte: responsabilidade da Ton (canais oficiais).",
+  "system_message": "# FALLBACK DE SISTEMA\nVocê é Toni, assistente virtual parceiro de indicação de produtos Ton. Use somente fatos confirmados em {{base_conhecimento}} e links existentes em {{modelos}}. Lead quente recebe primeiro a resposta/link pedido. Se a pessoa já tem maquininha, pergunte o motivo antes de recomendar; não ofereça TapTon espontaneamente e não envie fotos. Pergunte Android/iPhone e envie link do app somente após declaração explícita de compra. O único acompanhamento é o toque do sistema após 30 minutos, elegível dentro da janela Meta; 24h/72h ficam desativados. Dúvidas de suporte/pós-venda e pedidos de humano são encaminhados à Ton/equipe; respeite opt-out imediatamente. Nunca invente preço, taxa, desconto, cupom, prazo ou escassez; não acrescente CTA a uma resposta determinística.",
+  "base_conhecimento": "Fatos comerciais consultados em 07/10/2026. Fontes oficiais Ton: https://www.ton.com.br/maquinhas, páginas oficiais de produto e https://www.ton.com.br/planos-e-taxas; condições individuais devem ser conferidas no app/checkout.\n\nCatálogo vigente de referência: T1 R$16,80 (comprovante por SMS; até 12x; não aceita Pix na maquininha); T2 R$49,88 (chip 3G e Wi-Fi; comprovante por SMS; Pix na maquininha; até 12x); T3 R$108,00 (chip 3G e Wi-Fi; comprovante impresso ou SMS; Pix na maquininha; até 21x para novos clientes); T3 Smart R$191,88 (Android touchscreen, chip 4G e Wi-Fi; comprovante impresso ou SMS; Pix na maquininha; até 21x para novos clientes). Valores de catálogo podem mudar.\n\nPlanos: Ton Mega+ disponível para CPF, MEI e CNPJ e compatível com os modelos do catálogo; após a condição inicial aplicável, as taxas seguem a faixa de vendas informada no app. Ton Black é exclusivo para CNPJ; suas condições e elegibilidade devem ser confirmadas no app/checkout. Não inventar elegibilidade ou taxas específicas de Black.\n\nTaxas: a página oficial consultada em 07/10/2026 divulga taxas a partir de 0,74% no débito e no crédito à vista. É uma condição inicial/condicional, não uma taxa universal nem garantida: depende do plano, modalidade, conta e condições vigentes. Confirme a taxa individual no app. Não inferir taxa por parcela, bandeira ou prazo de recebimento.\n\nRecebimento: há opções de recebimento em até 1 minuto ou em 1 dia útil, conforme modalidade e condições da conta escolhidas; consulte a opção e a taxa aplicáveis no app. Não garantir recebimento universal ou imediato.\n\nCondições gerais: sem mensalidade e sem aluguel; pagamento único de adesão, com parcelamento conforme modelo/catálogo; garantia vitalícia conforme termos Ton e encaminhamento de defeito/troca pelo suporte oficial; mais de 50 bandeiras. As bandeiras Alelo, Pluxee, Ticket, Up Brasil e VR exigem cadastro CNPJ.\n\nPix na maquininha: novos clientes têm 30 dias com taxa zero; depois, 0% requer cadastro de uma chave Pix do titular na Conta Ton (CPF, CNPJ ou telefone). Sem chave cadastrada, a taxa informada é 0,49% por venda. Confirme a condição vigente no app.\n\nEntrega: frete grátis para todo o Brasil. A faixa de referência informada para este fluxo é de 3 a 7 dias úteis; a previsão específica depende do modelo, região e pedido e deve ser confirmada no carrinho/app. Existem observações de entregas antecipadas em 1 ou 2 dias, mas isso não é prazo oficial nem garantia. Acompanhe no app Ton ou em https://rastreie.ton.com.br/orders.\n\nDesconto: quem pede pelo nosso link tem a possibilidade de desconto na adesão (não é garantia de valor), sem custo extra. Use somente o snapshot promocional específico de cada modelo abaixo; não invente nem generalize desconto ou cupom, e nunca o chame de cashback.\n\nRenda Ton: só responder se perguntarem; benefícios dependem das regras vigentes, elegibilidade, nível, validação e volume. Nenhum valor de recompensa é garantido. Cadastro, entrega, garantia e suporte são tratados pelos canais oficiais da Ton.\n\nSnapshot promocional afiliado observado em 07/10/2026 (dinâmico; preço e disponibilidade podem mudar; confirme o valor final no carrinho):\n- T1: 70% OFF; sem cupom extra; preço exibido: R$ 16,80\n- T2: 72% OFF; cupom 20%; preço exibido: R$ 39,90\n- T3: 72% OFF; cupom 20%; preço exibido: R$ 86,40\n- T3 Smart: 71% OFF; cupom 20%; preço exibido: R$ 153,50",
   "modelos": [
     {
       "id": "t1",
       "nome": "T1",
+      "preco": "R$ 16,80",
+      "parcelas": "em até 12x",
+      "promocao": {
+        "desconto": "70% OFF",
+        "cupom": null,
+        "preco_observado": "R$ 16,80",
+        "observado_em": "07/10/2026"
+      },
       "foto": "https://analisereview.com.br/t1-showcase-new.webp",
       "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_D150&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor"
     },
     {
       "id": "t2",
       "nome": "T2",
+      "preco": "R$ 49,88",
+      "parcelas": "em até 12x",
+      "promocao": {
+        "desconto": "72% OFF",
+        "cupom": "20%",
+        "preco_observado": "R$ 39,90",
+        "observado_em": "07/10/2026"
+      },
       "foto": "https://analisereview.com.br/t2-showcase-new.webp",
       "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_D195&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor"
     },
     {
       "id": "t3",
       "nome": "T3",
+      "preco": "R$ 108,00",
+      "parcelas": "em até 21x",
+      "promocao": {
+        "desconto": "72% OFF",
+        "cupom": "20%",
+        "preco_observado": "R$ 86,40",
+        "observado_em": "07/10/2026"
+      },
       "foto": "https://analisereview.com.br/t3-showcase-new.webp",
-      "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_S920&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor"
+      "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_S920&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor",
+      "link_black": "https://ton.com.br/checkout/cart/?productId=TONBLACK_TIER_S920&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&userAnticipation=0&userTag=tonblack_tier&utm_medium=invite_share&utm_source=revendedor"
     },
     {
       "id": "t3_smart",
       "nome": "T3 Smart",
+      "preco": "R$ 191,88",
+      "parcelas": "em até 21x",
+      "promocao": {
+        "desconto": "71% OFF",
+        "cupom": "20%",
+        "preco_observado": "R$ 153,50",
+        "observado_em": "07/10/2026"
+      },
       "foto": "https://analisereview.com.br/t3-smart-showcase-new.webp",
-      "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_SMART_POS&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor"
+      "link": "https://www.ton.com.br/checkout/cart?userTag=tonmega_tier&userAnticipation=1&productId=TONMEGA_TIER_SMART_POS&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&utm_medium=invite_share&utm_source=revendedor",
+      "link_black": "https://ton.com.br/checkout/cart/?productId=TONBLACK_TIER_SMART_POS&referrer=B7C09243-0F6C-4FA5-BA01-4562B9C88FD6&userAnticipation=0&userTag=tonblack_tier&utm_medium=invite_share&utm_source=revendedor"
     }
   ],
   "evolution": {
@@ -42,12 +76,36 @@
   "meta": {
     "phone_number_id": "",
     "access_token": "",
-    "verify_token": "toni-verify-2026",
-    "version": "v20.0"
+    "verify_token": "",
+    "version": "v20.0",
+    "waba_id": "",
+    "business_events": {
+      "enabled": false,
+      "event_type": "lead",
+      "currency": "BRL"
+    }
   },
   "llm": {
     "base_url": "http://127.0.0.1:8888/v1",
-    "api_key": "sk-seu-token-aqui",
-    "model": "Qwen/Qwen2.5-14B-Instruct-GGUF"
+    "api_key": "",
+    "model": "Qwen/Qwen2.5-14B-Instruct-GGUF",
+    "providers": [
+      {
+        "nome": "Unsloth (local)",
+        "base_url": "http://127.0.0.1:8888/v1",
+        "api_key": ""
+      },
+      {
+        "nome": "OpenAI",
+        "base_url": "https://api.openai.com/v1",
+        "api_key": ""
+      }
+    ]
+  },
+  "auth": {
+    "facebook_app_id": "",
+    "facebook_app_secret": "",
+    "redirect_uri": "https://wa.analisereview.com.br/api/auth/facebook/callback",
+    "admin_email": "admin@example.invalid"
   }
 }

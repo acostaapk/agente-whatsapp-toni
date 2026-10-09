@@ -24,3 +24,13 @@ admin/config/history.json
 admin/config/lead_state.json
 admin/config/funnel.jsonl
 admin/config/followups.json
+admin/config/users.db
+admin/config/messages.jsonl
+admin/config/blocked.json
+admin/config/qualify.json
+
+# Backups locais (podem conter segredos/dados de clientes)
+*.bak
+*.bak-*
+*.bak2
+infra/backups/
